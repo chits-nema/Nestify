@@ -1,3 +1,29 @@
+from __future__ import annotations
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from .heat_map.router import router as heatmap_router
+from .pinterest.router import router as pinterest_router
+
+app = FastAPI(title="Nestify Backend")
+
+# very permissive CORS for local development; lock this down in production
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(heatmap_router)
+app.include_router(pinterest_router)
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok", "service": "nestify-backend"}
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
