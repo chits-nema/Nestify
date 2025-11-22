@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nestify - Find Your Forever Home</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <div class="logo">
+                    <h1>🏡 Nestify</h1>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#listings">Listings</a></li>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h2>Find Your Forever Home</h2>
+            <p>Discover the perfect place where memories are made</p>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search by location, type, or features...">
+                <button id="searchBtn" onclick="searchHomes()">Search</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="filters" class="filter-section">
+        <div class="container">
+            <h3>Filter Your Search</h3>
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="typeFilter">Home Type:</label>
+                    <select id="typeFilter" onchange="applyFilters()">
+                        <option value="all">All Types</option>
+                        <option value="house">House</option>
+                        <option value="apartment">Apartment</option>
+                        <option value="condo">Condo</option>
+                        <option value="townhouse">Townhouse</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="bedroomFilter">Bedrooms:</label>
+                    <select id="bedroomFilter" onchange="applyFilters()">
+                        <option value="all">Any</option>
+                        <option value="1">1+</option>
+                        <option value="2">2+</option>
+                        <option value="3">3+</option>
+                        <option value="4">4+</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="priceFilter">Max Price:</label>
+                    <select id="priceFilter" onchange="applyFilters()">
+                        <option value="all">Any Price</option>
+                        <option value="300000">$300,000</option>
+                        <option value="500000">$500,000</option>
+                        <option value="750000">$750,000</option>
+                        <option value="1000000">$1,000,000</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="listings" class="listings-section">
+        <div class="container">
+            <h3>Available Homes</h3>
+            <div id="listingsContainer" class="listings-grid">
+                <!-- Listings will be dynamically inserted here -->
+            </div>
+            <div id="noResults" class="no-results" style="display: none;">
+                <p>No homes found matching your criteria. Try adjusting your filters.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="about-section">
+        <div class="container">
+            <h3>About Nestify</h3>
+            <p>Nestify is dedicated to helping you find your forever home. We understand that finding the perfect place is about more than just square footage and location – it's about finding where you belong.</p>
+            <div class="features">
+                <div class="feature">
+                    <span class="icon">🔍</span>
+                    <h4>Easy Search</h4>
+                    <p>Find homes quickly with our intuitive search and filter system</p>
+                </div>
+                <div class="feature">
+                    <span class="icon">❤️</span>
+                    <h4>Save Favorites</h4>
+                    <p>Keep track of homes you love with our favorites feature</p>
+                </div>
+                <div class="feature">
+                    <span class="icon">🏆</span>
+                    <h4>Quality Listings</h4>
+                    <p>Every home is carefully verified and detailed</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="contact-section">
+        <div class="container">
+            <h3>Get in Touch</h3>
+            <p>Have questions? We're here to help you find your perfect home.</p>
+            <form class="contact-form">
+                <input type="text" placeholder="Your Name" required>
+                <input type="email" placeholder="Your Email" required>
+                <textarea placeholder="Your Message" rows="5" required></textarea>
+                <button type="submit">Send Message</button>
+            </form>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Nestify. Helping you find your forever home.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
