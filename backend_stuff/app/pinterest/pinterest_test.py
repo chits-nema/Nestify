@@ -4,10 +4,10 @@ import json
 import os
 
 def test_analysis():
-    analyzer = PinterestPropertyAnalyzer(os.environ.get('GOOGLE_VISION_API_KEY'))
+    analyzer = PinterestPropertyAnalyzer(os.environ.get('HF_API_KEY'))
     
     # Test with a sample RSS URL
-    rss_url = "https://www.pinterest.com/chitsidzonemazuwa/inthehousebored.rss"
+    rss_url = "https://www.pinterest.com/chitsidzonemazuwa/dream-family-home.rss"
     location = {
         'city': 'München',  # Using German spelling as in the example
     }
