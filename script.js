@@ -150,6 +150,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Handle Enter key in search input
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchHomes();
+            }
+        });
+    }
 });
 
 // Display homes in the listings grid
@@ -277,15 +287,3 @@ function applyFilters() {
     
     displayHomes(filtered);
 }
-
-// Handle Enter key in search input
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                searchHomes();
-            }
-        });
-    }
-});
