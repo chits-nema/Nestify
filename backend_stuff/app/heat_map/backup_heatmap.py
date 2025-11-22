@@ -46,17 +46,6 @@ STATE_CODE_TO_FEDERAL = {
     "BB": "DE-BB", "MV": "DE-MV", "ST": "DE-ST", "TH": "DE-TH",
 }
 
-# Region mappings for ThinkImmo (full region names - matches Pinterest backend)
-CITY_TO_REGION = {
-    "münchen": "Bayern", "munich": "Bayern", "berlin": "Berlin", "hamburg": "Hamburg",
-    "köln": "Nordrhein-Westfalen", "cologne": "Nordrhein-Westfalen",
-    "frankfurt": "Hessen", "stuttgart": "Baden-Württemberg",
-    "düsseldorf": "Nordrhein-Westfalen", "dortmund": "Nordrhein-Westfalen",
-    "essen": "Nordrhein-Westfalen", "leipzig": "Sachsen", "bremen": "Bremen",
-    "dresden": "Sachsen", "hannover": "Niedersachsen", "nürnberg": "Bayern",
-    "nuremberg": "Bayern",
-}
-
 
 def transliterate_german(text: str) -> str:
     """Translate German umlauts for API compatibility."""
@@ -77,12 +66,6 @@ def get_region_code(city: str) -> str:
     """Get region code for ThinkImmo API from city name."""
     city_lower = city.lower().strip()
     return CITY_TO_STATE.get(city_lower, "BY")
-
-
-def get_region_name(city: str) -> str:
-    """Get full region name for ThinkImmo API (matches Pinterest backend)."""
-    city_lower = city.lower().strip()
-    return CITY_TO_REGION.get(city_lower, "Bayern")
 
 
 async def calculate_buying_power_from_params(
@@ -128,39 +111,41 @@ async def search_properties(
     from_index: int = 0,
     timeout: float = 20.0,
 ) -> Dict:
-    """Search properties via ThinkImmo API (matches Pinterest backend implementation)."""
+    """Search properties via ThinkImmo API."""
     norm_city = transliterate_german(city)
-    region = get_region_name(city)
+    region = get_region_code(city)
     
-    # Without geoSearches filter, we get all properties (which we can then filter by coordinates)
-    # This matches how ThinkImmo works best - it returns properties nationwide
+    # Fix typo in API - it expects APPARTMENTBUY (with double P)
+    api_type = property_type
+    if property_type == "APARTMENTBUY":
+        api_type = "APPARTMENTBUY"
+    
     payload = {
         "active": True,
-        "type": property_type,
+        "type": api_type,
         "sortBy": "desc",
-        "sortKey": "publishDate",
+        "sortKey": "buyingPrice",
         "from": from_index,
         "size": size,
+        "geoSearches": {
+            "geoSearchQuery": norm_city,
+            "geoSearchType": "city",
+            "region": region,
+        }
     }
     
-    logger.info(f"search_properties: searching for {property_type} (size: {size})")
-    logger.info(f"ThinkImmo payload: {payload}")
+    logger.info(f"search_properties: searching {norm_city} in region {region}")
     
     async with httpx.AsyncClient(timeout=timeout) as client:
         r = await client.post(THINKIMMO_URL, json=payload, headers={
             "Content-Type": "application/json",
             "Accept": "application/json",
-            "User-Agent": "NestifyHackathonClient/1.0",
         })
         
-        logger.info(f"ThinkImmo response status: {r.status_code}")
-        
         if r.status_code in (200, 201):
-            data = r.json()
-            logger.info(f"ThinkImmo returned {data.get('total', 0)} properties")
-            return data
+            return r.json()
         else:
-            logger.warning(f"ThinkImmo returned status {r.status_code}: {r.text[:200]}")
+            logger.warning(f"ThinkImmo returned status {r.status_code}")
             return {"total": 0, "results": []}
 
 
@@ -187,15 +172,8 @@ def categorize_affordability(price: float, budget: float) -> AffordabilityLevel:
 def process_properties_for_heatmap(
     properties: List[Dict],
     budget: float,
-    filter_city: Optional[str] = None,
 ) -> List[Dict]:
-    """Process properties and add affordability categorization and coordinates.
-    
-    Args:
-        properties: Raw properties from ThinkImmo
-        budget: Max buying power for affordability calculation
-        filter_city: Optional city name to filter by (case-insensitive)
-    """
+    """Process properties and add affordability categorization and coordinates."""
     processed = []
     
     for prop in properties:
@@ -211,12 +189,6 @@ def process_properties_for_heatmap(
         # Skip if no coordinates
         if lat is None or lon is None:
             continue
-        
-        # Filter by city if specified
-        if filter_city:
-            prop_city = address.get("_normalized_city") or address.get("city") or ""
-            if filter_city.lower() not in prop_city.lower():
-                continue
         
         level = categorize_affordability(price, budget)
         
@@ -324,18 +296,12 @@ async def get_affordability_heatmap(
     )
     
     # Extract max buying power from response
-    # Check nested scoringResult first
-    scoring = budget_response.get("scoringResult", {})
     buying_power = (
-        scoring.get("priceBuilding") or
-        scoring.get("loanAmount") or
         budget_response.get("priceBuilding") or
         budget_response.get("approxMaxBuyingPower") or
         budget_response.get("maxBuyingPower") or
         0
     )
-    
-    logger.info(f"Extracted buying power: {buying_power} from budget response")
     
     # Step 2: Search properties in the city
     search_response = await search_properties(
@@ -347,18 +313,8 @@ async def get_affordability_heatmap(
     properties = search_response.get("results", [])
     total_found = search_response.get("total", 0)
     
-    logger.info(f"Found {total_found} properties from ThinkImmo")
-    
-    if not properties:
-        logger.warning(f"No properties returned. Response: {search_response}")
-    
-    # Step 3: Process properties with affordability levels and city filter
-    processed = process_properties_for_heatmap(properties, buying_power, filter_city=city)
-    
-    logger.info(f"Processed {len(processed)} properties with coordinates (filtered for {city})")
-    
-    if not processed:
-        logger.warning(f"No properties match city '{city}' or have coordinates. Raw count was {len(properties)}")
+    # Step 3: Process properties with affordability levels
+    processed = process_properties_for_heatmap(properties, buying_power)
     
     # Step 4: Generate heatmap grid
     heatmap = create_heatmap_grid(processed)

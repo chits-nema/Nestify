@@ -24,21 +24,12 @@ app.include_router(pinterest_router)
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "nestify-backend"}
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+
+
+# ---------- Property Search Integration ----------
 from pydantic import BaseModel
 from typing import Literal
 import httpx
-
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # OK for hackathon demo
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 THINKIMMO_URL = "https://thinkimmo-api.mgraetz.de/thinkimmo"
 

@@ -33,13 +33,23 @@ async def health() -> Dict[str, str]:
 def _extract_max_buying_power(resp: Any) -> Optional[float]:
     """Try to pull a numeric buying-power value from Interhyp response.
 
-    Returns the first sensible numeric field found or None.
+    Prioritizes scoringResult.priceBuilding and scoringResult.loanAmount.
     """
-    # Prefer specific fields commonly returned by the Interhyp JSON
+    # First, try the most common nested path for Interhyp
+    if isinstance(resp, dict):
+        scoring = resp.get("scoringResult", {})
+        if isinstance(scoring, dict):
+            # Check priceBuilding first (most accurate for property purchase)
+            if "priceBuilding" in scoring and isinstance(scoring["priceBuilding"], (int, float)):
+                return float(scoring["priceBuilding"])
+            # Then loanAmount
+            if "loanAmount" in scoring and isinstance(scoring["loanAmount"], (int, float)):
+                return float(scoring["loanAmount"])
+    
+    # Fallback: deep search for any preferred key
     preferred_keys = ("priceBuilding", "loanAmount", "approxMaxBuyingPower", "maxBuyingPower", "value", "price")
 
     def _deep_search(obj):
-        # If dict, check preferred keys first then recurse
         if isinstance(obj, dict):
             for k in preferred_keys:
                 if k in obj and isinstance(obj[k], (int, float)):
@@ -53,9 +63,6 @@ def _extract_max_buying_power(resp: Any) -> Optional[float]:
                 found = _deep_search(item)
                 if found is not None:
                     return found
-        elif isinstance(obj, (int, float)):
-            # fallback: return a numeric leaf
-            return float(obj)
         return None
 
     return _deep_search(resp)
