@@ -1,0 +1,32 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Node
+frontend_stuff/node_modules/
+dist/
+
+# OS files
+.DS_Store
+
+# Environment
+.env
+.env.*
+
+.vscode
+.python_packages
+**/.env
+**/__pycache__
+myapp
+.idea
+.idea/
+/.env
+.env
+venv/
+/sharepoint_temp/*
+**/sharepoint_temp/*
+/.github/workflows/node_modules/
+.secrets
+./application/frontend/newrelic_agent.log
+./application/frontend/node_modules
