@@ -2,3 +2,9 @@ fastapi
 uvicorn
 httpx
 python-dotenv
+# requirements.txt
+google-cloud-vision==3.4.0
+requests==2.31.0
+feedparser==6.0.10
+flask==3.0.0
+flask-cors==4.0.0
