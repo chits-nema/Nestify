@@ -30,3 +30,8 @@ venv/
 .secrets
 ./application/frontend/newrelic_agent.log
 ./application/frontend/node_modules
+__pycache__/
+*.pyc
+node_modules/
+.env
+.vscode/

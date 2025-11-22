@@ -7,126 +7,199 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header>
-        <nav class="navbar">
-            <div class="container">
-                <div class="logo">
-                    <h1>🏡 Nestify</h1>
-                </div>
-                <ul class="nav-links">
-                    <li><a href="#home">Home</a></li>
-                    <li><a href="#listings">Listings</a></li>
-                    <li><a href="#about">About</a></li>
-                    <li><a href="#contact">Contact</a></li>
-                </ul>
-            </div>
-        </nav>
-    </header>
-
-    <section id="home" class="hero">
-        <div class="hero-content">
-            <h2>Find Your Forever Home</h2>
-            <p>Discover the perfect place where memories are made</p>
-            <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="Search by location, type, or features...">
-                <button id="searchBtn" onclick="searchHomes()">Search</button>
-            </div>
-        </div>
-    </section>
-
-    <section id="filters" class="filter-section">
+<header>
+    <nav class="navbar">
         <div class="container">
-            <h3>Filter Your Search</h3>
-            <div class="filters">
-                <div class="filter-group">
-                    <label for="typeFilter">Home Type:</label>
-                    <select id="typeFilter" onchange="applyFilters()">
-                        <option value="all">All Types</option>
-                        <option value="house">House</option>
-                        <option value="apartment">Apartment</option>
-                        <option value="condo">Condo</option>
-                        <option value="townhouse">Townhouse</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="bedroomFilter">Bedrooms:</label>
-                    <select id="bedroomFilter" onchange="applyFilters()">
-                        <option value="all">Any</option>
-                        <option value="1">1+</option>
-                        <option value="2">2+</option>
-                        <option value="3">3+</option>
-                        <option value="4">4+</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="priceFilter">Max Price:</label>
-                    <select id="priceFilter" onchange="applyFilters()">
-                        <option value="all">Any Price</option>
-                        <option value="300000">$300,000</option>
-                        <option value="500000">$500,000</option>
-                        <option value="750000">$750,000</option>
-                        <option value="1000000">$1,000,000</option>
-                    </select>
-                </div>
+            <div class="logo">
+                <h1>🏡 Nestify</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#listings">Listings</a></li>
+                <li><a href="#tinder">Swipe</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+</header>
+
+<!-- HERO: "I know / I don't know" -->
+<section id="home" class="hero">
+    <div class="hero-content">
+        <h2>Find Your Forever Home</h2>
+        <p>Let Nestify help you discover the places that actually feel like you.</p>
+
+        <div class="choice-grid">
+            <div class="choice-card">
+                <h3>I know what I want</h3>
+                <p>Use smart filters or upload your Pinterest mood board.</p>
+                <button onclick="goToListings()">Start with filters</button>
+                <!-- your friend can hook Pinterest board here later -->
+            </div>
+            <div class="choice-card">
+                <h3>I don’t really know</h3>
+                <p>Swipe through homes Tinder-style and we’ll learn your taste.</p>
+                <button onclick="goToSwipe()">Start swiping</button>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <section id="listings" class="listings-section">
-        <div class="container">
-            <h3>Available Homes</h3>
-            <div id="listingsContainer" class="listings-grid">
-                <!-- Listings will be dynamically inserted here -->
+<!-- FILTERS + LISTINGS (for "I know what I want") -->
+<section id="filters" class="filter-section">
+    <div class="container">
+        <h3>Filter Your Search</h3>
+        <div class="filters">
+            <div class="filter-group">
+                <label for="typeFilter">Home Type:</label>
+                <select id="typeFilter" onchange="applyFilters()">
+                    <option value="all">All Types</option>
+                    <option value="house">House</option>
+                    <option value="apartment">Apartment</option>
+                    <option value="condo">Condo</option>
+                    <option value="townhouse">Townhouse</option>
+                </select>
             </div>
-            <div id="noResults" class="no-results" style="display: none;">
-                <p>No homes found matching your criteria. Try adjusting your filters.</p>
+            <div class="filter-group">
+                <label for="bedroomFilter">Bedrooms:</label>
+                <select id="bedroomFilter" onchange="applyFilters()">
+                    <option value="all">Any</option>
+                    <option value="1">1+</option>
+                    <option value="2">2+</option>
+                    <option value="3">3+</option>
+                    <option value="4">4+</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="priceFilter">Max Price:</label>
+                <select id="priceFilter" onchange="applyFilters()">
+                    <option value="all">Any Price</option>
+                    <option value="300000">$300,000</option>
+                    <option value="500000">$500,000</option>
+                    <option value="750000">$750,000</option>
+                    <option value="1000000">$1,000,000</option>
+                </select>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <section id="about" class="about-section">
-        <div class="container">
-            <h3>About Nestify</h3>
-            <p>Nestify is dedicated to helping you find your forever home. We understand that finding the perfect place is about more than just square footage and location – it's about finding where you belong.</p>
-            <div class="features">
-                <div class="feature">
-                    <span class="icon">🔍</span>
-                    <h4>Easy Search</h4>
-                    <p>Find homes quickly with our intuitive search and filter system</p>
-                </div>
-                <div class="feature">
-                    <span class="icon">❤️</span>
-                    <h4>Save Favorites</h4>
-                    <p>Keep track of homes you love with our favorites feature</p>
-                </div>
-                <div class="feature">
-                    <span class="icon">🏆</span>
-                    <h4>Quality Listings</h4>
-                    <p>Every home is carefully verified and detailed</p>
-                </div>
+<section id="listings" class="listings-section">
+    <div class="container">
+        <h3>Available Homes</h3>
+        <div id="listingsContainer" class="listings-grid"></div>
+        <div id="noResults" class="no-results" style="display:none;">
+            <p>No homes found matching your criteria. Try adjusting your filters.</p>
+        </div>
+    </div>
+</section>
+
+<!-- SWIPE SECTION (for "I don't know" path) -->
+<section id="tinder" class="tinder-section">
+    <div class="container">
+        <h3 class="tinder-title">Swipe Your Future Home</h3>
+        <p class="tinder-subtitle">
+            Not sure what you want? Swipe through properties and let Nestify learn your style.
+        </p>
+
+        <div id="card-container" class="tinder-card-container">
+            <p>Loading properties...</p>
+        </div>
+
+        <div style="text-align: center; margin: 15px auto 0 auto; color: #666; font-size: 0.9rem; max-width: 100%; width: 100%;">
+            <p style="margin: 0; padding: 0;">👈 Swipe left to pass • Swipe right to like 👉</p>
+        </div>
+        
+        <p id="status-text" class="tinder-status"></p>
+
+        <!-- Recommended homes after swiping -->
+        <div id="recommendations" class="recommendations-section" style="display:none;">
+            <h4>Homes you might love</h4>
+            <div id="recommendations-container" class="recommendations-grid"></div>
+        </div>
+
+        <!-- Homes you liked in this session -->
+        <div id="liked-section" class="recommendations-section" style="display:none;">
+            <h4>Homes You Swiped Right ❤️</h4>
+            <p style="color: #666; font-size: 0.95rem; margin-top: 5px;">All properties you liked so far</p>
+            <div id="liked-container" class="recommendations-grid"></div>
+        </div>  
+
+        <!-- Detail view for a single home -->
+        <div id="detail-section" class="detail-section" style="display:none;">
+            <div class="detail-image-wrapper">
+                <img id="detail-image" src="" alt="Home image">
+            </div>
+            <div class="detail-info">
+                <h4 id="detail-title"></h4>
+                <p id="detail-location"></p>
+                <p id="detail-price"></p>
+                <p id="detail-size"></p>
+                <p id="detail-rooms"></p>
+
+                <a id="detail-link"
+                href="#"
+                target="_blank"
+                style="display:none; margin-top:0.5rem; color:#3498db; text-decoration:underline;">
+                View full listing on partner portal
+                </a>
+
+                <button id="detail-close-btn" class="detail-close-btn">Close</button>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <section id="contact" class="contact-section">
-        <div class="container">
-            <h3>Get in Touch</h3>
-            <p>Have questions? We're here to help you find your perfect home.</p>
-            <form class="contact-form">
-                <input type="text" placeholder="Your Name" required>
-                <input type="email" placeholder="Your Email" required>
-                <textarea placeholder="Your Message" rows="5" required></textarea>
-                <button type="submit">Send Message</button>
-            </form>
+<!-- ABOUT -->
+<section id="about" class="about-section">
+    <div class="container">
+        <h3>About Nestify</h3>
+        <p>
+            Nestify helps Gen Z and Millennials find homes that match their lifestyle, not just their budget.
+            We combine real listings with a playful swipe interface and budget tools.
+        </p>
+        <div class="features">
+            <div class="feature">
+                <span class="icon">🔍</span>
+                <h4>Smart Search</h4>
+                <p>Use filters or Pinterest inspiration to narrow down your options.</p>
+            </div>
+            <div class="feature">
+                <span class="icon">❤️</span>
+                <h4>Personalized Swipes</h4>
+                <p>Our swipe view learns what you like in just a few taps.</p>
+            </div>
+            <div class="feature">
+                <span class="icon">📊</span>
+                <h4>Budget Awareness</h4>
+                <p>Get a feeling for what’s realistic in your price range.</p>
+            </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2025 Nestify. Helping you find your forever home.</p>
-        </div>
-    </footer>
+<!-- CONTACT -->
+<section id="contact" class="contact-section">
+    <div class="container">
+        <h3>Get in Touch</h3>
+        <p>Have questions? We're here to help you find your perfect home.</p>
+        <form class="contact-form">
+            <input type="text" placeholder="Your Name" required>
+            <input type="email" placeholder="Your Email" required>
+            <textarea placeholder="Your Message" rows="5" required></textarea>
+            <button type="submit">Send Message</button>
+        </form>
+    </div>
+</section>
 
-    <script src="script.js"></script>
+<footer>
+    <div class="container">
+        <p>&copy; 2025 Nestify. Helping you find your forever home.</p>
+    </div>
+</footer>
+
+<script src="script.js"></script>
+<script src="tinder.js"></script>
 </body>
 </html>

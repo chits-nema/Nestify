@@ -454,3 +454,305 @@ footer {
         border-radius: 0 0 10px 10px;
     }
 }
+
+/* --- Hero choice cards --- */
+.choice-grid {
+    margin-top: 3rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 2rem;
+}
+
+.choice-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    text-align: left;
+}
+
+.choice-card h3 {
+    margin-bottom: 0.5rem;
+}
+
+.choice-card p {
+    margin-bottom: 1.5rem;
+}
+
+.choice-card button {
+    padding: 0.8rem 1.6rem;
+    border: none;
+    border-radius: 999px;
+    background: #3498db;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* --- Tinder swipe section --- */
+.tinder-section {
+    background: #fdfdfd;
+    padding: 4rem 0;
+}
+
+.tinder-title {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.tinder-subtitle {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #555;
+}
+
+.tinder-card-container {
+    max-width: 420px;
+    margin: 0 auto;
+    min-height: 320px;
+}
+
+.swipe-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    overflow: hidden;
+    cursor: grab;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    border: 3px solid transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.swipe-card:active {
+    cursor: grabbing;
+    box-shadow: 0 12px 35px rgba(0,0,0,0.18);
+}
+
+/* Image Carousel Container */
+.card-image-container {
+    position: relative;
+    width: 100%;
+    height: 230px;
+    background: #f0f0f0;
+}
+
+.card-image {
+    width: 100%;
+    height: 230px;
+    object-fit: cover;
+}
+
+/* Carousel Navigation Buttons */
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.6);
+    border: none;
+    color: white;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.carousel-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-btn:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.carousel-prev {
+    left: 15px;
+}
+
+.carousel-next {
+    right: 15px;
+}
+
+/* Carousel Dots */
+.carousel-dots {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+
+.carousel-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.carousel-dot:hover {
+    background: rgba(255, 255, 255, 0.8);
+    transform: scale(1.2);
+}
+
+.carousel-dot.active {
+    background: white;
+    width: 24px;
+    border-radius: 4px;
+}
+
+.card-content {
+    padding: 1.5rem;
+}
+
+/* No Image Message */
+.no-image-message {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    z-index: 5;
+    text-align: center;
+    padding: 20px;
+}
+
+.no-image-message svg {
+    margin-bottom: 15px;
+    opacity: 0.9;
+}
+
+.no-image-message .main-message {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0 auto 10px;
+    text-align: center;
+    width: 100%;
+}
+
+.no-image-message .sub-message {
+    font-size: 0.95rem;
+    font-weight: 400;
+    opacity: 0.95;
+    text-align: center;
+    line-height: 1.6;
+    max-width: 280px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.card-title {
+    font-size: 1.3rem;
+    margin-bottom: 0.3rem;
+}
+
+.card-price {
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+    color: #2c3e50;
+}
+
+.card-details,
+.card-location {
+    color: #555;
+    font-size: 0.95rem;
+}
+
+.tinder-status {
+    text-align: center;
+    margin-top: 1rem;
+    color: #555;
+}
+
+/* --- Recommendations & detail view --- */
+.recommendations-section {
+    margin-top: 3rem;
+}
+
+.recommendations-section h4 {
+    margin-bottom: 1rem;
+}
+
+.recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+}
+
+.rec-card {
+    display: flex;
+    gap: 0.8rem;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    padding: 0.7rem;
+    cursor: pointer;
+}
+
+.rec-image-wrapper img {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.rec-info h5 {
+    margin-bottom: 0.3rem;
+}
+
+/* Detail view */
+.detail-section {
+    margin-top: 3rem;
+    display: flex;
+    gap: 2rem;
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+}
+
+.detail-image-wrapper img {
+    width: 280px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.detail-info h4 {
+    margin-bottom: 0.5rem;
+}
+
+.detail-close-btn {
+    margin-top: 1rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 999px;
+    border: none;
+    background: #3498db;
+    color: white;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .detail-section {
+        flex-direction: column;
+    }
+}
