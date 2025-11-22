@@ -7,7 +7,7 @@ def test_analysis():
     analyzer = PinterestPropertyAnalyzer(os.environ.get('GOOGLE_VISION_API_KEY'))
     
     # Test with a sample RSS URL
-    rss_url = "https://www.pinterest.com/chitsidzonemazuwa/testingboard.rss"
+    rss_url = "https://www.pinterest.com/chitsidzonemazuwa/inthehousebored.rss"
     location = {
         'city': 'München',  # Using German spelling as in the example
     }
@@ -52,6 +52,6 @@ def test_analysis():
         print(f"   Location: {prop.get('zip', '')} {prop.get('address', {}).get('city', '')}")
         print(f"   Match Score: {prop.get('match_score', 0):.2f}")
         print(f"   Features: Balcony={prop.get('balcony', False)}, Garden={prop.get('garden', False)}")
-
+ 
 if __name__ == '__main__':
     test_analysis()
