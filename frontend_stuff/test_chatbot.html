@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatbot Test - Nestify</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div style="padding: 40px; max-width: 800px; margin: 0 auto;">
+    <h1>🏡 Nestify Chatbot Test</h1>
+    <p style="margin: 20px 0;">This page tests the AI chatbot integration. Click the chat button in the bottom-right corner to start.</p>
+    
+    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 30px;">
+      <h3>Test Scenarios:</h3>
+      <ul style="line-height: 2;">
+        <li>Ask about budget calculations</li>
+        <li>Request property recommendations</li>
+        <li>Inquire about specific neighborhoods</li>
+        <li>Get advice on affordability</li>
+      </ul>
+    </div>
+    
+    <div style="background: #fff3cd; padding: 20px; border-radius: 10px; margin-top: 20px; border-left: 4px solid #ffc107;">
+      <strong>Note:</strong> Make sure the backend is running at <code>http://127.0.0.1:8000</code>
+      <br><br>
+      Run: <code>cd backend_stuff && uvicorn app.main:app --reload</code>
+    </div>
+  </div>
+
+  <script>
+    // Mock data for testing
+    window.buyingPower = 500000;
+    window.likedHomes = [
+      {
+        buyingPrice: 450000,
+        squareMeter: 85,
+        rooms: 3,
+        address: { city: "München" }
+      },
+      {
+        buyingPrice: 480000,
+        squareMeter: 90,
+        rooms: 3.5,
+        address: { city: "München" }
+      }
+    ];
+  </script>
+  <script src="chatbot.js"></script>
+</body>
+</html>

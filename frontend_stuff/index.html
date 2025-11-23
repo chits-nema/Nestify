@@ -10,26 +10,95 @@
 <body>
   <nav class="navbar">
     <div class="container">
-      <div class="logo"><h1>🏡 Nestify</h1></div>
+      <div class="logo"><a href="index.html" style="text-decoration: none; color: inherit;"><h1>🏡 Nestify</h1></a></div>
       <ul class="nav-links">
-        <li><a href="#">Home</a></li>
-        <li><a href="swipe.html">Swipe</a></li>
+        <li><a href="index.html" class="active">Home</a></li>
+        <li><a href="index.html?mode=calculator">Budget Calculator</a></li>
+        <li><a href="pinterest.html">Pinterest Style</a></li>
       </ul>
     </div>
   </nav>
 
   <div class="hero">
     <h2>Find Your Forever Home</h2>
-    <p>Calculate your budget and discover properties within your reach</p>
+    <p>Two ways to discover your perfect property</p>
   </div>
 
-  <div class="main-container">
+  <!-- Landing Page - Feature Selection -->
+  <div class="landing-features" id="landingFeatures">
+    <div class="feature-cards">
+      <div class="feature-card budget-card">
+        <div class="feature-icon">💰</div>
+        <h3>Budget Calculator</h3>
+        <p>Calculate your buying power based on income, equity, and expenses. Get realistic property recommendations.</p>
+        <ul class="feature-list">
+          <li>✓ Instant budget calculation</li>
+          <li>✓ Affordability heatmap</li>
+          <li>✓ Swipe through properties</li>
+          <li>✓ Real-time market data</li>
+        </ul>
+        <button class="btn primary" onclick="startBudgetCalculator()">
+          Start Budgeting →
+        </button>
+      </div>
+
+      <div class="feature-card pinterest-card">
+        <div class="feature-icon">🎨</div>
+        <h3>Pinterest Style Finder</h3>
+        <p>Share your Pinterest board and find properties matching your aesthetic preferences and style.</p>
+        <ul class="feature-list">
+          <li>✓ AI style analysis</li>
+          <li>✓ Match by aesthetics</li>
+          <li>✓ Feature detection</li>
+          <li>✓ Personalized results</li>
+        </ul>
+        <button class="btn primary" onclick="window.location.href='pinterest.html'">
+          Find By Style →
+        </button>
+      </div>
+    </div>
+
+    <div class="landing-benefits">
+      <h3>🏡 Why Choose Nestify?</h3>
+      <div class="benefits-grid">
+        <div class="benefit-item">
+          <span class="benefit-icon">🎯</span>
+          <h4>Accurate Budgeting</h4>
+          <p>Know exactly what you can afford with real mortgage calculations</p>
+        </div>
+        <div class="benefit-item">
+          <span class="benefit-icon">🗺️</span>
+          <h4>Interactive Maps</h4>
+          <p>Visualize affordability with color-coded heatmaps</p>
+        </div>
+        <div class="benefit-item">
+          <span class="benefit-icon">❤️</span>
+          <h4>Swipe to Save</h4>
+          <p>Tinder-style interface to find properties you love</p>
+        </div>
+        <div class="benefit-item">
+          <span class="benefit-icon">🤖</span>
+          <h4>AI Advisor</h4>
+          <p>Chat with our AI for personalized home buying guidance</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-container" style="display: none;" id="budgetCalculatorApp">
     <!-- Step Indicator -->
     <div class="steps">
       <div class="step active" id="step1"><span class="step-num">1</span> Budget</div>
       <div class="step" id="step2"><span class="step-num">2</span> Results</div>
       <div class="step" id="step3"><span class="step-num">3</span> Explore</div>
       <div class="step" id="step3b"><span class="step-num">3</span> Swipe</div>
+    </div>
+
+    <!-- Back to Home Button -->
+    <div class="back-to-home">
+      <button class="btn secondary btn-small" onclick="backToLanding()">
+        ← Back to Home
+      </button>
     </div>
 
     <!-- STEP 1: Calculator -->
@@ -273,5 +342,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
   <script src="budget.js"></script>
   <script src="tinder.js"></script>
+  <script src="chatbot.js"></script>
 </body>
 </html>

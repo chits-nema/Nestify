@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pinterest Style Analyzer - Nestify</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="pinterest.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <div class="logo"><a href="index.html" style="text-decoration: none; color: inherit;"><h1>🏡 Nestify</h1></a></div>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html?mode=calculator">Budget Calculator</a></li>
+        <li><a href="pinterest.html" class="active">Pinterest Style</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <h2>🎨 Find Homes That Match Your Style</h2>
+    <p>Share your Pinterest board and we'll find properties that match your aesthetic</p>
+  </div>
+
+  <div class="main-container pinterest-container">
+    <!-- Step Indicator -->
+    <div class="steps">
+      <div class="step active" id="pStep1"><span class="step-num">1</span> Pinterest Board</div>
+      <div class="step" id="pStep2"><span class="step-num">2</span> Analysis</div>
+      <div class="step" id="pStep3"><span class="step-num">3</span> Matches</div>
+    </div>
+
+    <!-- STEP 1: Input Pinterest URL -->
+    <div class="section active" id="pSec1">
+      <div class="pinterest-panel">
+        <div class="pinterest-icon">📌</div>
+        <h3>Share Your Pinterest Board</h3>
+        <p class="subtitle">We'll analyze your pins to understand your dream home style</p>
+        
+        <div class="form-group">
+          <label>Pinterest Board URL</label>
+          <input 
+            type="text" 
+            id="pinterestUrl" 
+            placeholder="https://www.pinterest.com/username/board-name/"
+            class="pinterest-input"
+          >
+          <div class="input-hint">
+            💡 Tip: Open your Pinterest board and copy the URL from your browser
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Target City</label>
+          <select id="pinterestCity" class="pinterest-select">
+            <option value="München">München</option>
+            <option value="Berlin">Berlin</option>
+            <option value="Hamburg">Hamburg</option>
+            <option value="Frankfurt">Frankfurt</option>
+            <option value="Köln">Köln</option>
+            <option value="Stuttgart">Stuttgart</option>
+          </select>
+        </div>
+
+        <button class="btn primary" id="analyzeBtn">
+          ✨ Analyze My Style
+        </button>
+
+        <div class="pinterest-examples">
+          <h4>How it works:</h4>
+          <div class="example-grid">
+            <div class="example-item">
+              <div class="example-icon">📍</div>
+              <div class="example-text">
+                <strong>1. Share Board</strong>
+                <p>Paste your Pinterest board URL</p>
+              </div>
+            </div>
+            <div class="example-item">
+              <div class="example-icon">🤖</div>
+              <div class="example-text">
+                <strong>2. AI Analysis</strong>
+                <p>We analyze your aesthetic preferences</p>
+              </div>
+            </div>
+            <div class="example-item">
+              <div class="example-icon">🏡</div>
+              <div class="example-text">
+                <strong>3. Find Matches</strong>
+                <p>Get properties matching your style</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2: Analysis Results -->
+    <div class="section" id="pSec2">
+      <div class="analysis-panel">
+        <h3>🎨 Your Style Profile</h3>
+        
+        <div class="board-context" id="boardContext">
+          <!-- Board context will be inserted here -->
+        </div>
+
+        <div class="features-grid" id="featuresGrid">
+          <!-- Feature scores will be inserted here -->
+        </div>
+
+        <div class="action-btns">
+          <button class="btn secondary" onclick="goToPinterestStep(1)">← Back</button>
+          <button class="btn primary" onclick="goToPinterestStep(3)">View Matches →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3: Property Matches -->
+    <div class="section" id="pSec3">
+      <div class="matches-panel">
+        <h3>🏡 Properties Matching Your Style</h3>
+        <p class="subtitle" id="matchCount"></p>
+        
+        <div class="properties-grid" id="propertiesGrid">
+          <!-- Properties will be inserted here -->
+        </div>
+
+        <div class="action-btns">
+          <button class="btn secondary" onclick="goToPinterestStep(2)">← Back to Analysis</button>
+          <button class="btn primary" onclick="goToPinterestStep(1)">Try Another Board</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p id="loadTxt">Analyzing your Pinterest board...</p>
+  </div>
+
+  <script src="pinterest.js"></script>
+  <script src="chatbot.js"></script>
+</body>
+</html>

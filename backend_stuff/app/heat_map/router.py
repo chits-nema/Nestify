@@ -29,6 +29,7 @@ class BudgetOnlyRequest(BaseModel):
     monthly_rate: float
     equity: float
     city: str = "München"
+    fixed_period_years: Optional[int] = None
 
 
 @router.post("/calculate")
@@ -67,11 +68,15 @@ async def calculate_budget(req: BudgetOnlyRequest) -> Dict[str, Any]:
     Useful for quick budget estimates before generating full heatmap.
     """
     try:
+        # Use provided fixed_period_years or default to 10
+        fixed_period = req.fixed_period_years if req.fixed_period_years is not None else 10
+        
         resp = await calculate_buying_power_from_params(
             salary=req.salary,
             monthly_rate=req.monthly_rate,
             equity=req.equity,
             city=req.city,
+            fixed_period=fixed_period,
         )
         
         buying_power = (

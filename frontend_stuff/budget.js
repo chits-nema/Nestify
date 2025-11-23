@@ -25,12 +25,42 @@ const cityCenters = {
 const formatCurrency = (n) => n ? '€' + Math.round(n).toLocaleString('de-DE') : '€0';
 const formatPercent = (n) => n ? n.toFixed(2) + '%' : '0%';
 
+// Landing page navigation
+function startBudgetCalculator() {
+  const landing = document.getElementById('landingFeatures');
+  const calculator = document.getElementById('budgetCalculatorApp');
+  if (landing) landing.style.display = 'none';
+  if (calculator) calculator.style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+function backToLanding() {
+  const landing = document.getElementById('landingFeatures');
+  const calculator = document.getElementById('budgetCalculatorApp');
+  if (landing) landing.style.display = 'block';
+  if (calculator) calculator.style.display = 'none';
+  window.scrollTo(0, 0);
+  
+  // Reset to step 1
+  goToStep(1);
+}
+
 // DOM Ready
 document.addEventListener('DOMContentLoaded', () => {
+  // Check if we should show landing or calculator
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('mode') === 'calculator') {
+    startBudgetCalculator();
+  }
+  
   // Attach event listeners
-  document.getElementById('calculateBtn').addEventListener('click', calculateBudget);
-  document.getElementById('exploreBtn').addEventListener('click', loadHeatmap);
-  document.getElementById('swipeBtn').addEventListener('click', startSwipeMode);
+  const calculateBtn = document.getElementById('calculateBtn');
+  const exploreBtn = document.getElementById('exploreBtn');
+  const swipeBtn = document.getElementById('swipeBtn');
+  
+  if (calculateBtn) calculateBtn.addEventListener('click', calculateBudget);
+  if (exploreBtn) exploreBtn.addEventListener('click', loadHeatmap);
+  if (swipeBtn) swipeBtn.addEventListener('click', startSwipeMode);
   
   // Toggle fixed years input based on radio selection
   const fixedRadios = document.querySelectorAll('input[name="fixed"]');
@@ -102,7 +132,8 @@ function hideLoading() {
 // Get form values
 function getFormValues() {
   const hasFixedPeriod = document.querySelector('input[name="fixed"][value="yes"]').checked;
-  const fixedYears = hasFixedPeriod ? parseInt(document.getElementById('fixedYears').value) || 10 : null;
+  const fixedYearsInput = document.getElementById('fixedYears');
+  const fixedYears = parseInt(fixedYearsInput.value) || 10;
   
   const formData = {
     salary: parseFloat(document.getElementById('salary').value) || 0,
@@ -111,8 +142,8 @@ function getFormValues() {
     city: document.getElementById('city').value,
   };
   
-  // Add fixed period only if user selected "Yes"
-  if (hasFixedPeriod && fixedYears) {
+  // Add fixed period if user selected "Yes" with custom years
+  if (hasFixedPeriod) {
     formData.fixed_period_years = fixedYears;
   }
   

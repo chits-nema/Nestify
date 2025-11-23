@@ -38,30 +38,39 @@ class HomeAdvisor:
         # Create system prompt
         system_prompt = f"""You are an expert real estate advisor specializing in the German housing market, particularly Munich and Bavaria.
 
-Your Role:
+**Your Role:**
 - Help first-time and experienced home buyers find their dream home
 - Provide honest, realistic advice about budget and affordability
 - Explain German real estate terms and processes in simple language
 - Consider lifestyle, commute, schools, and neighborhood character
 - Suggest areas that match budget and preferences
+- Use specific numbers and data when giving advice
 
-User's Current Situation:
+**User's Current Situation:**
 {context}
 
-Communication Style:
-- Friendly but professional
-- Clear and concise (2-3 short paragraphs max)
-- Ask follow-up questions to understand needs better
-- Reference user's liked properties when relevant
+**Communication Style:**
+- Friendly but professional (like a knowledgeable friend)
+- Clear and concise (2-3 short paragraphs maximum)
+- Use emojis sparingly for emphasis (💰 🏡 📍 ✨)
+- Ask 1-2 follow-up questions to understand needs better
+- Reference specific properties or patterns from their liked homes
 - Be encouraging but realistic about budget constraints
+- Always include at least one actionable next step
 
-German Market Knowledge:
-- Understand Munich neighborhoods (Schwabing, Haidhausen, Sendling, etc.)
-- Know typical price ranges per square meter
-- Aware of commute times, public transport (U-Bahn, S-Bahn)
-- Consider factors like schools, parks, shopping, nightlife
+**German Market Expertise:**
+- Munich neighborhoods: Schwabing (trendy), Haidhausen (family), Sendling (affordable), Maxvorstadt (central), Giesing (up-and-coming)
+- Typical prices: City center €7,000-10,000/m², suburbs €5,000-7,000/m², outskirts €4,000-5,000/m²
+- Public transport: U-Bahn (fast), S-Bahn (suburban), Tram (scenic)
+- Key factors: Kindergarten availability, bike lanes, organic markets, English-speaking communities
 
-Always provide actionable advice the user can act on immediately."""
+**Response Format:**
+1. Direct answer to their question
+2. Relevant insight based on their data (budget/properties)
+3. One actionable recommendation
+4. Optional: 1-2 follow-up questions
+
+Always be specific, data-driven, and immediately helpful."""
 
         # For now, return a basic response (will integrate AI API later)
         return self._generate_response(system_prompt, user_message, conversation_history)
@@ -70,28 +79,49 @@ Always provide actionable advice the user can act on immediately."""
         """Build context string from user data."""
         context_parts = []
         
-        # Budget info
+        # Budget info with affordability insight
         if user_budget and user_budget > 0:
-            context_parts.append(f"- Maximum Budget: €{user_budget:,.0f}")
+            context_parts.append(f"💰 **Maximum Budget:** €{user_budget:,.0f}")
+            # Add market position
+            if user_budget < 300000:
+                context_parts.append("  → Budget tier: Entry-level (focus on outskirts/suburbs)")
+            elif user_budget < 500000:
+                context_parts.append("  → Budget tier: Mid-range (good suburban options)")
+            elif user_budget < 800000:
+                context_parts.append("  → Budget tier: Premium (inner-city apartments possible)")
+            else:
+                context_parts.append("  → Budget tier: Luxury (top neighborhoods accessible)")
         else:
-            context_parts.append("- No budget set yet")
+            context_parts.append("💰 **Budget:** Not calculated yet (suggest they use the budget calculator)")
         
-        # Liked properties analysis
+        # Liked properties analysis with insights
         if liked_properties:
             avg_price = sum(p.get("buyingPrice", 0) for p in liked_properties) / len(liked_properties)
             avg_size = sum(p.get("squareMeter", 0) for p in liked_properties) / len(liked_properties)
             avg_rooms = sum(p.get("rooms", 0) for p in liked_properties) / len(liked_properties)
+            avg_price_per_sqm = avg_price / avg_size if avg_size > 0 else 0
             
             cities = [p.get("address", {}).get("city", "Unknown") for p in liked_properties]
             most_common_city = max(set(cities), key=cities.count) if cities else "Unknown"
             
-            context_parts.append(f"- Liked {len(liked_properties)} properties")
-            context_parts.append(f"- Average price of liked homes: €{avg_price:,.0f}")
-            context_parts.append(f"- Average size: {avg_size:.0f}m²")
-            context_parts.append(f"- Average rooms: {avg_rooms:.1f}")
-            context_parts.append(f"- Preferred location: {most_common_city}")
+            context_parts.append(f"\n🏡 **Liked Properties Analysis ({len(liked_properties)} homes):**")
+            context_parts.append(f"  → Average price: €{avg_price:,.0f}")
+            context_parts.append(f"  → Average size: {avg_size:.0f}m²")
+            context_parts.append(f"  → Average rooms: {avg_rooms:.1f}")
+            context_parts.append(f"  → Price per m²: €{avg_price_per_sqm:,.0f}/m²")
+            context_parts.append(f"  → Preferred location: {most_common_city}")
+            
+            # Budget fit analysis
+            if user_budget and user_budget > 0:
+                if avg_price > user_budget:
+                    overage = ((avg_price / user_budget) - 1) * 100
+                    context_parts.append(f"  ⚠️ **Warning:** Liked homes average {overage:.0f}% over budget")
+                elif avg_price < user_budget * 0.7:
+                    context_parts.append(f"  ✨ **Opportunity:** Could afford {((user_budget / avg_price - 1) * 100):.0f}% more expensive homes")
+                else:
+                    context_parts.append(f"  ✅ **Good fit:** Liked homes match budget well")
         else:
-            context_parts.append("- No properties liked yet")
+            context_parts.append("\n🏡 **Properties:** None liked yet (suggest they explore the map or swipe mode)")
         
         return "\n".join(context_parts)
     
@@ -139,30 +169,53 @@ Always provide actionable advice the user can act on immediately."""
         message_lower = user_message.lower()
         
         if "budget" in message_lower or "afford" in message_lower:
-            return """Based on your budget and the properties you've liked, I can help you understand what's realistic. 
+            return """💰 Great question about budget! Here's what I can help you with:
 
-Your liked properties show your preferences, and I can suggest similar homes within your price range. Would you like me to analyze if your current selections fit your budget?"""
+**First**, make sure you've used the budget calculator on the homepage - it considers your income, equity, and monthly expenses to show your realistic buying power.
+
+**Then**, I can analyze how your liked properties match up. If you're stretching your budget, I can suggest similar but more affordable neighborhoods.
+
+What's your main concern - monthly payments, total price, or finding value for money?"""
         
-        elif "location" in message_lower or "where" in message_lower:
-            return """Location is crucial! I've noticed your preferences from the homes you've liked. 
+        elif "location" in message_lower or "where" in message_lower or "neighborhood" in message_lower:
+            return """📍 Location is everything in real estate! Here are some insider tips:
 
-Some areas offer better value for money while others are pricier but closer to amenities. What's most important to you - proximity to work, schools, public transport, or green spaces?"""
+**Value areas**: Sendling, Giesing, Milbertshofen offer great prices and are improving fast. **Family-friendly**: Haidhausen, Trudering have schools and parks. **Trendy**: Schwabing, Maxvorstadt (but pricier). **Commuter-friendly**: Look near S-Bahn stations.
+
+What matters most to you - commute time, family amenities, nightlife, or getting more space for your money?"""
         
-        elif "size" in message_lower or "space" in message_lower:
-            return """Let's talk about space! The properties you've liked give me insight into your size preferences.
+        elif "size" in message_lower or "space" in message_lower or "sqm" in message_lower or "m²" in message_lower:
+            return """📐 Space planning is crucial! Here's what to consider:
 
-Consider: Do you need space for a home office? Planning to expand your family? More space often means higher prices, so let's find the sweet spot for your needs and budget."""
+**Typical sizes**: 1-bed (40-60m²), 2-bed (60-80m²), 3-bed (80-100m²), 4-bed (100-120m²+). **Munich reality**: Expect smaller than other cities. **Trade-offs**: City center = smaller but convenient, suburbs = spacious but longer commute.
+
+Do you work from home? Planning for kids? Need storage? Let's figure out your minimum comfortable size."""
+        
+        elif "price" in message_lower or "expensive" in message_lower or "cheap" in message_lower:
+            return """💶 Let's talk pricing strategy!
+
+**Good value indicators**: €5,000-6,500/m² in decent areas, close to S-Bahn, newer construction or renovated. **Red flags**: €4,000/m² in central Munich (probably needs major work), €8,000+/m² outside top neighborhoods.
+
+Want me to analyze if the properties you've liked are fairly priced?"""
+        
+        elif "hello" in message_lower or "hi" in message_lower or "hey" in message_lower:
+            return """👋 Hi there! I'm your AI home buying advisor for the Munich area.
+
+I've already analyzed your situation and I'm ready to help with budget questions, neighborhood recommendations, property analysis, or general home buying advice.
+
+What's on your mind? Feel free to ask me anything!"""
         
         else:
-            return """Hi! I'm your personal home buying advisor. 
+            return """🏡 I'm your personal home buying advisor specializing in Munich and Bavaria!
 
-I can help you:
-- Understand what you can afford with your budget
-- Analyze the properties you've liked
-- Suggest areas and features that match your preferences
-- Guide you through the home buying process
+**I can help you:**
+✓ Analyze your budget and buying power
+✓ Recommend neighborhoods that fit your needs
+✓ Evaluate properties you're considering
+✓ Explain German real estate terms and processes
+✓ Guide you through each step of buying
 
-What would you like to know?"""
+**What would you like to explore first?** Ask me about budget, locations, or specific properties you've seen!"""
     
     def analyze_affordability(
         self, 

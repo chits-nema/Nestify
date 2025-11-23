@@ -335,7 +335,7 @@ class PinterestPropertyAnalyzer:
             "sortBy": "desc",
             "sortKey": "publishDate",
             "from": 0,
-            "size": 20,
+            "size": 100,  # Increased from 20 to 100 for more results with images
             "geoSearches": {
                 "geoSearchQuery": city,
                 "geoSearchType": "town",
