@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .heat_map.router import router as heatmap_router
 from .pinterest.router import router as pinterest_router
+from .chatbot.router import router as chatbot_router
 
 app = FastAPI(title="Nestify Backend")
 
@@ -19,11 +23,15 @@ app.add_middleware(
 
 app.include_router(heatmap_router)
 app.include_router(pinterest_router)
+app.include_router(chatbot_router)
 
 
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "nestify-backend"}
+
+
+# ---------- ThinkImmo Property Search ----------
 
 
 # ---------- Property Search Integration ----------
