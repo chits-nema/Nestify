@@ -31,7 +31,28 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('calculateBtn').addEventListener('click', calculateBudget);
   document.getElementById('exploreBtn').addEventListener('click', loadHeatmap);
   document.getElementById('swipeBtn').addEventListener('click', startSwipeMode);
+  
+  // Toggle fixed years input based on radio selection
+  const fixedRadios = document.querySelectorAll('input[name="fixed"]');
+  fixedRadios.forEach(radio => {
+    radio.addEventListener('change', toggleFixedYearsInput);
+  });
+  
+  // Initial state
+  toggleFixedYearsInput();
 });
+
+// Show/hide fixed years input based on selection
+function toggleFixedYearsInput() {
+  const fixedYes = document.querySelector('input[name="fixed"][value="yes"]').checked;
+  const fixedYearsGroup = document.getElementById('fixedYearsGroup');
+  
+  if (fixedYes) {
+    fixedYearsGroup.style.display = 'block';
+  } else {
+    fixedYearsGroup.style.display = 'none';
+  }
+}
 
 // Navigation between steps
 function goToStep(step) {
@@ -80,12 +101,22 @@ function hideLoading() {
 
 // Get form values
 function getFormValues() {
-  return {
+  const hasFixedPeriod = document.querySelector('input[name="fixed"][value="yes"]').checked;
+  const fixedYears = hasFixedPeriod ? parseInt(document.getElementById('fixedYears').value) || 10 : null;
+  
+  const formData = {
     salary: parseFloat(document.getElementById('salary').value) || 0,
     monthly_rate: parseFloat(document.getElementById('monthlyRate').value) || 0,
     equity: parseFloat(document.getElementById('equity').value) || 0,
     city: document.getElementById('city').value,
   };
+  
+  // Add fixed period only if user selected "Yes"
+  if (hasFixedPeriod && fixedYears) {
+    formData.fixed_period_years = fixedYears;
+  }
+  
+  return formData;
 }
 
 // STEP 1: Calculate Budget
