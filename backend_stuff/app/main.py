@@ -86,16 +86,17 @@ async def search_properties(req: PropertySearchRequest):
     norm_city = transliterate_german(req.city)
     norm_region = transliterate_german(req.region)
 
+    # Use same geo search as Pinterest for better results
     payload = {
         "active": True,
         "sortBy": "desc",
-        "sortKey": "pricePerSqm",
+        "sortKey": "publishDate",
         "from": req.from_index,
         "size": req.size,
         "geoSearches": {
-            "geoSearchQuery": norm_city,
+            "geoSearchQuery": req.city,
             "geoSearchType": "town",
-            "region": norm_region,
+            "region": req.region
         }
     }
     

@@ -7,12 +7,29 @@ Comprehensive upgrades to the swipe recommendation algorithm for optimal user ex
 
 ## ✅ Implemented Improvements
 
-### 1. **Optimal Swipe Count** 
-- **Changed:** MAX_CARDS from 30 → **15 swipes**
-- **Why:** 
-  - Prevents user fatigue (~2-3 minutes ideal session)
-  - Still collects enough data for quality recommendations
-  - Faster to see results
+### 1. **Smart Swipe System** 
+- **Initial Batch:** 15 cards (quick start)
+- **Maximum Total:** Up to 50 swipes (adaptive loading)
+- **User Control:** Choose when to see results based on confidence
+
+**Confidence-Based Flow:**
+```javascript
+const MAX_CARDS = 15;  // Initial batch
+const MAX_TOTAL_SWIPES = 50;  // Maximum allowed
+
+// After 15 swipes:
+- 0 likes → Encourage "Load 15 More"
+- <5 likes (40% confidence) → Offer "Swipe More" or "Show Results Anyway"
+- 5+ likes (75-100% confidence) → Offer "Show Results" or "Swipe More"
+- 50 swipes → Force results (maximum reached)
+```
+
+**Why This Works:**
+- Most users finish in 15-30 swipes (~2-4 min)
+- Low confidence users can self-improve results
+- High confidence users can stop early
+- Power users can swipe up to 50 for maximum accuracy
+- Reduces fatigue while maintaining quality
 
 ### 2. **Dynamic Weight System** 🎯
 **Before:** Static weights (City: 25%, Price: 35%, Size: 30%, Rooms: 10%)
@@ -172,6 +189,12 @@ Console now shows:
 ## 📝 Implementation Notes
 
 ### Files Modified:
+
+**Backend:**
+- `backend_stuff/app/main.py` - Added geoSearches filter for city/region filtering
+- `backend_stuff/app/heat_map/heatmap_backend.py` - Updated search_properties with geoSearches
+
+**Frontend:**
 - `frontend_stuff/tinder.js`
   - Lines 13: MAX_CARDS = 15
   - Lines 520-640: New profile building with stats
@@ -179,24 +202,99 @@ Console now shows:
   - Lines 780-850: Dynamic weight usage in scoring
   - Lines 932: Match threshold 50% → 60%
   - Lines 970-1010: Surprise recommendations
-  - Lines 1007-1015: Confidence UI
+  - Lines 1007-1015: Confidence UI with inline score display
   - Lines 1058: Surprise badge
+  - Added city filtering logic for property display
+  - Pinterest-style card rendering for recommendations
+  - External link handling with `<a>` tag wrapping
+- `frontend_stuff/index.html` - Added pinterest.css stylesheet
+- `frontend_stuff/budget.js` - Port consistency (8000)
 
-### No Backend Changes Required
-All logic runs client-side in JavaScript.
+---
+
+## 🌍 Geographic Filtering Implementation
+
+### ThinkImmo API Integration
+
+Implemented precise geographic filtering to ensure properties match the user's selected city:
+
+```python
+# backend_stuff/app/main.py & backend_stuff/app/heat_map/heatmap_backend.py
+payload = {
+    "geoSearches": {
+        "geoSearchQuery": req.city,      # e.g., "München"
+        "geoSearchType": "town",
+        "region": req.region              # e.g., "bavaria"
+    }
+}
+```
+
+### Frontend City Filtering
+
+Additional client-side filtering in `tinder.js`:
+
+```javascript
+const filteredByCity = propertiesList.filter(p => {
+    const propCity = (p.address?.city || p.city || '').toLowerCase();
+    return propCity.includes(cityLower) || cityLower.includes(propCity);
+});
+```
+
+**Benefits:**
+- Properties accurately filtered by budget calculator city selection
+- Consistent filtering across swipe, heatmap, and Pinterest views
+- Dual-layer approach (backend + frontend) ensures accuracy
+
+---
+
+## 🎨 Pinterest-Style UI Integration
+
+### Property Card Rendering
+
+Updated recommendations to match Pinterest browse page styling:
+
+```javascript
+function createPropertyCard(property, score) {
+    return `
+        <a href="${externalUrl}" target="_blank" rel="noopener noreferrer">
+            <div class="property-card">
+                <img class="property-image" src="${imageSrc}" />
+                <div class="property-content">
+                    <h4>${title}</h4>
+                    <p class="property-location">${city}</p>
+                    <div class="property-stats">
+                        <span>€${price}</span>
+                        <span>${sqm} m²</span>
+                        <span>${rooms} rooms</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    `;
+}
+```
+
+**Features:**
+- External links to ImmoScout24 open in new tabs
+- Consistent grid layout with `property-stats` flexbox
+- Added `pinterest.css` to `index.html` for visual consistency
+- Clean typography matching Pinterest browse experience
 
 ---
 
 ## 🎯 Key Takeaways
 
-1. **15 swipes is the sweet spot** - enough data, not too long
-2. **Dynamic > Static** - algorithm adapts to each user
-3. **Transparency matters** - show confidence score
-4. **Quality > Quantity** - 60% threshold ensures good matches
-5. **Surprises delight** - wildcard keeps it interesting
+1. **Flexible swipes (15-50)** - adapts to user confidence and needs
+2. **User choice matters** - let users decide when they have enough data
+3. **Dynamic > Static** - algorithm adapts to each user's patterns
+4. **Transparency matters** - show confidence score inline with heading
+5. **Quality > Quantity** - 60% threshold ensures good matches
+6. **Surprises delight** - wildcard keeps it interesting
+7. **Geography matters** - geoSearches filter ensures city-accurate results
+8. **UI consistency** - Pinterest-style cards across all views
 
 ---
 
-**Last Updated:** 2025-11-22  
-**Version:** 2.0  
-**Status:** ✅ Production Ready
+**Last Updated:** 2025-11-23  
+**Version:** 2.1  
+**Status:** ✅ Production Ready (Hackathon Submission)

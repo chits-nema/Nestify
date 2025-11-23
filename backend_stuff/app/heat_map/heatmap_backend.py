@@ -131,9 +131,9 @@ async def search_properties(
     """Search properties via ThinkImmo API (matches Pinterest backend implementation)."""
     norm_city = transliterate_german(city)
     region = get_region_name(city)
+    region_code = get_region_code(city)
     
-    # Without geoSearches filter, we get all properties (which we can then filter by coordinates)
-    # This matches how ThinkImmo works best - it returns properties nationwide
+    # Use geoSearches like Pinterest for better results
     payload = {
         "active": True,
         "type": property_type,
@@ -141,6 +141,11 @@ async def search_properties(
         "sortKey": "publishDate",
         "from": from_index,
         "size": size,
+        "geoSearches": {
+            "geoSearchQuery": city,
+            "geoSearchType": "town",
+            "region": region
+        }
     }
     
     logger.info(f"search_properties: searching for {property_type} (size: {size})")

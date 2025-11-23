@@ -15,33 +15,69 @@ Nestify uses an intelligent swipe-based system to learn user preferences and rec
 
 ### **1. Data Collection (Backend)**
 
-The backend fetches **200 properties** from ThinkImmo API:
+The backend fetches **200 properties** from ThinkImmo API with precise geographic filtering:
 
 ```python
 # backend_stuff/app/main.py
-size: int = 200  # Increased for better swipe variety
+size: int = 200  # Large dataset for variety
+
+# Geographic filtering ensures city accuracy
+payload = {
+    "geoSearches": {
+        "geoSearchQuery": req.city,      # e.g., "München"
+        "geoSearchType": "town",
+        "region": req.region              # e.g., "bavaria"
+    }
+}
 ```
 
+**geoSearches Benefits:**
+- Properties match the city selected in budget calculator
+- Eliminates irrelevant listings from other cities
+- Consistent with Pinterest browse functionality
+- Accurate regional filtering
+
 This large dataset ensures:
-- Diverse price ranges
-- Various locations
+- Diverse price ranges within the selected city
+- Various neighborhoods and locations
 - Different sizes and room counts
 - Better recommendation quality
 
-### **2. Swipe Session (30 Cards)**
+### **2. Smart Swipe Session (15 initial, up to 50 total)**
 
-Users swipe through **30 randomly selected properties** from the 200 fetched:
+Users start with **15 randomly selected properties**, then can load more based on confidence:
 
 ```javascript
 // frontend_stuff/tinder.js
-const MAX_CARDS = 30;  // Increased to learn preferences better
+const MAX_CARDS = 15;  // Initial batch size
+const MAX_TOTAL_SWIPES = 50;  // Maximum total swipes allowed
+
+// Additional city filtering on frontend
+const cityLower = city.toLowerCase();
+const filteredByCity = propertiesList.filter(p => {
+    const propCity = (p.address?.city || p.city || '').toLowerCase();
+    return propCity.includes(cityLower) || cityLower.includes(propCity);
+});
 ```
 
-**Why 30 swipes?**
-- Provides enough data to learn accurate preferences
-- Covers different price ranges, sizes, and locations
-- Balances user engagement with data quality
-- Statistical significance for reliable recommendations
+**Confidence-Based Flow:**
+
+1. **No Likes (0)** → Encourages loading 15 more properties
+2. **Low Confidence (<5 likes)** → Offers choice:
+   - 🔄 Swipe 15 More (Recommended)
+   - ✓ Show Results Anyway
+3. **Good Confidence (5+ likes)** → Offers choice:
+   - ❤️ Show My Recommendations
+   - 🔄 Swipe More for Better Results
+4. **Maximum Reached (50 swipes)** → Automatically shows recommendations
+
+**Why this approach?**
+- 15 cards is efficient starting point for most users
+- Low confidence users can improve results with more swipes
+- Confident users can finish quickly
+- 50 card maximum prevents fatigue
+- User controls their experience based on needs
+- Dual filtering (backend geoSearches + frontend) ensures city accuracy
 
 ### **3. Preference Learning**
 
@@ -140,40 +176,82 @@ Schwabing
 ```python
 class PropertySearchRequest(BaseModel):
     size: int = 200  # Increased from 20 to 200
+    
+# Added geoSearches filter
+payload = {
+    "geoSearches": {
+        "geoSearchQuery": req.city,
+        "geoSearchType": "town",
+        "region": req.region
+    }
+}
+```
+
+**File:** `backend_stuff/app/heat_map/heatmap_backend.py`
+
+```python
+# Updated search_properties with same geoSearches filter
+# Ensures consistency across heatmap and swipe features
 ```
 
 ### **Frontend Changes**
 
 **File:** `frontend_stuff/tinder.js`
 
-#### 1. Increased Swipe Cards
+#### 1. Smart Swipe Card Loading
 ```javascript
-const MAX_CARDS = 30;  // From 15 to 30
-```
+const MAX_CARDS = 15;  // Initial batch
+const MAX_TOTAL_SWIPES = 50;  // Maximum allowed
 
-#### 2. Fetch More Properties
-```javascript
-size: 200,  // From 50 to 200
-```
-
-#### 3. Smart Scoring System
-```javascript
-function calculateMatchScore(p, profile) {
-  // Returns 0-100 score based on:
-  // - City match (30%)
-  // - Price match (40%)
-  // - Size match (20%)
-  // - Room match (10%)
+// Dynamic loading based on confidence
+function loadMoreProperties() {
+  const remainingSlots = MAX_TOTAL_SWIPES - properties.length;
+  const batchSize = Math.min(15, remainingSlots, unseenProperties.length);
+  properties = [...properties, ...moreProperties];
 }
 ```
 
-#### 4. Enhanced Recommendations
+#### 2. City Filtering
 ```javascript
-// Sort by match score
-.sort((a, b) => b.score - a.score)
+const filteredByCity = propertiesList.filter(p => {
+    const propCity = (p.address?.city || p.city || '').toLowerCase();
+    return propCity.includes(cityLower) || cityLower.includes(propCity);
+});
+```
 
-// Display match percentage
-<p>${matchPercent}% Match</p>
+#### 3. Pinterest-Style Cards
+```javascript
+function createPropertyCard(property, score) {
+    return `
+        <a href="${externalUrl}" target="_blank">
+            <div class="property-card">
+                <img class="property-image" src="${imageSrc}" />
+                <div class="property-content">
+                    <h4>${title}</h4>
+                    <p class="property-location">${city}</p>
+                    <div class="property-stats">
+                        <span>€${price}</span>
+                        <span>${sqm} m²</span>
+                        <span>${rooms} rooms</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    `;
+}
+```
+
+#### 4. Confidence Score Display
+```javascript
+recHeading.innerHTML = 
+    '✨ Recommended For You <span>(Confidence: ' + profile.confidence + '%)</span>';
+```
+
+**File:** `frontend_stuff/index.html`
+
+```html
+<!-- Added Pinterest CSS for consistent styling -->
+<link rel="stylesheet" href="pinterest.css">
 ```
 
 ---
@@ -238,8 +316,9 @@ python -m http.server 8000
 ### **3. Use the System**
 
 1. Click "I don't really know" on homepage
-2. Swipe through 30 properties
+2. Swipe through 15 initial properties
 3. Like properties that appeal to you
+4. Choose to see results or load 15 more (up to 50 total)
 4. View personalized recommendations with match scores
 
 ---
@@ -253,40 +332,69 @@ python -m http.server 8000
 - ❌ No match scoring visibility
 
 ### **After Optimization:**
-- ✅ 200 properties fetched (4x more data)
-- ✅ 30 swipes shown (2x more learning)
-- ✅ Flexible matching with buffer zones
-- ✅ Match scores displayed (40-100%)
+- ✅ 200 properties fetched with geoSearches filtering (4x more data)
+- ✅ 15 initial cards + up to 50 total swipes (adaptive)
+- ✅ Confidence-based flow with user choice
+- ✅ Dynamic loading (load more if confidence is low)
+- ✅ Dual-layer city filtering (backend + frontend)
+- ✅ Pinterest-style property cards with external links
+- ✅ Confidence score displayed inline with heading
+- ✅ Flexible matching with buffer zones and 60% threshold
 - ✅ Average 10-20 recommendations per session
-- ✅ Sorted by relevance
+- ✅ Sorted by relevance (best matches first)
 
 ---
 
 ## 🎨 UI Enhancements
 
-### **Match Score Display**
+### **Pinterest-Style Property Cards**
 
-Added visual match indicator on recommendation cards:
+Updated recommendations to match Pinterest browse page styling for consistency:
 
-```css
-/* Match percentage in green */
-color: #2ecc71; 
-font-weight: bold;
+```javascript
+// frontend_stuff/tinder.js
+function createPropertyCard(property, score) {
+    const externalUrl = property.platforms?.[0]?.url || '#';
+    return `
+        <a href="${externalUrl}" target="_blank" rel="noopener noreferrer" 
+           class="property-card-link">
+            <div class="property-card">
+                <img class="property-image" src="${property.imageSrc}" />
+                <div class="property-content">
+                    <h4>${property.title}</h4>
+                    <p class="property-location">${city}</p>
+                    <div class="property-stats">
+                        <span>€${price.toLocaleString()}</span>
+                        <span>${sqm} m²</span>
+                        <span>${rooms} rooms</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    `;
+}
 ```
 
-Example card:
-```html
-<div class="rec-card">
-  <img src="property-image.jpg" />
-  <div class="rec-info">
-    <h5>München Apartment</h5>
-    <p>Schwabing</p>
-    <p>€450,000 · 65 m² · 2 rooms</p>
-    <p style="color: #2ecc71; font-weight: bold;">
-      87% Match
-    </p>
-  </div>
-</div>
+**Features:**
+- External links to ImmoScout24/platforms open in new tabs
+- Pinterest-style grid layout with `property-stats`
+- Responsive design matching browse experience
+- Added `pinterest.css` to `index.html`
+
+### **Confidence Score Display**
+
+Confidence score shown inline with "Recommended For You" heading:
+
+```javascript
+recHeading.innerHTML = 
+    '✨ Recommended For You <span>(Confidence: ' + profile.confidence + '%)</span>';
+```
+
+**Visual styling:**
+```css
+color: #2ecc71; 
+font-weight: bold;
+display: inline;
 ```
 
 ---
@@ -416,11 +524,22 @@ Built during hackaTUM hackathon
 ## 🎯 Summary
 
 **Key Changes:**
-- ✅ Backend: 200 properties (vs 20 before)
-- ✅ Frontend: 30 swipes (vs 15 before)
-- ✅ Smart scoring: 0-100% match with display
-- ✅ Flexible buffers: ±50% for price & size
-- ✅ Multi-city support
-- ✅ Sorted recommendations
+- ✅ Backend: 200 properties with geoSearches filter (vs 20 before)
+- ✅ Frontend: 15 initial cards + up to 50 total swipes (adaptive)
+- ✅ Confidence-based flow: User chooses when to see results
+- ✅ Dynamic loading: Load 15 more cards if confidence is low
+- ✅ Geographic filtering: City-accurate property matching
+- ✅ Pinterest-style UI: Consistent card design across views
+- ✅ External links: Properties open in new tabs
+- ✅ Confidence display: Inline with recommendations heading
+- ✅ Smart scoring: 60% threshold with dynamic weights
+- ✅ Multi-city support with statistical analysis
+- ✅ Sorted recommendations by match score
 
-**Result:** Much better user experience with 10-20 quality recommendations instead of 0-1!
+**Result:** City-accurate results with 10-20 quality recommendations and professional UI matching Pinterest browse experience!
+
+---
+
+**Last Updated:** 2025-11-23  
+**Version:** 2.1  
+**Status:** ✅ Production Ready (Hackathon Submission)

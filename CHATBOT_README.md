@@ -212,3 +212,35 @@ curl http://127.0.0.1:8000/chatbot/health
 - Firefox: ✅ Full support
 - Safari: ✅ Full support
 - Mobile browsers: ✅ Responsive design
+
+---
+
+## Integration with Nestify Features
+
+The chatbot seamlessly integrates with all Nestify features:
+
+### Budget Calculator Integration
+- Automatically receives user's budget from calculator
+- References max budget in property recommendations
+- Provides affordability analysis for properties
+
+### Swipe System Integration
+- Accesses liked properties from swipe session
+- Analyzes user preferences based on swipes
+- Suggests similar properties from liked ones
+- References confidence scores from recommendation engine
+
+### Heatmap Integration
+- Can explain heatmap affordability zones
+- Discusses neighborhoods shown on map
+- Provides context for colored regions
+
+### Property Data Access
+- References actual property details from ThinkImmo API
+- Uses same geoSearches filtering as swipe/heatmap
+- Aware of user's selected city and region
+
+---
+
+**Last Updated:** 2025-11-23  
+**Status:** ✅ Production Ready (Hackathon Submission)

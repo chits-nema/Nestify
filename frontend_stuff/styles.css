@@ -812,9 +812,9 @@ body::before {
 }
 .map-stat:last-child { border-right: none; }
 .map-stat-val { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.02em; }
-.map-stat-val.green { color: #4CAF50; }
-.map-stat-val.yellow { color: #81C784; }
-.map-stat-val.red { color: #2E7D99; }
+.map-stat-val.green { color: #2ecc71; }
+.map-stat-val.yellow { color: #f39c12; }
+.map-stat-val.red { color: #e74c3c; }
 .map-stat-lbl { font-size: 0.9rem; color: #7A7169; margin-top: 6px; font-weight: 500; }
 
 .map-legend { 
@@ -828,9 +828,9 @@ body::before {
 }
 .leg-item { display: flex; align-items: center; gap: 10px; }
 .leg-dot { width: 16px; height: 16px; border-radius: 50%; }
-.leg-dot.green { background: #4CAF50; }
-.leg-dot.yellow { background: #81C784; }
-.leg-dot.red { background: #2E7D99; }
+.leg-dot.green { background: #2ecc71; }
+.leg-dot.yellow { background: #f39c12; }
+.leg-dot.red { background: #e74c3c; }
 
 /* ========================================
    Property Cards

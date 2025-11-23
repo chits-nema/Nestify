@@ -77,8 +77,30 @@ function initSwipeMode(propertiesList, budget, city, region) {
 
   userBudget = budget;
   
-  // Sort properties by price to prioritize affordable ones
-  const sortedProperties = [...propertiesList].sort((a, b) => {
+  // Filter properties by city first
+  const cityLower = city.toLowerCase();
+  const filteredByCity = propertiesList.filter(p => {
+    const propCity = p.address?.city || p.address?._normalized_city || p.city || '';
+    return propCity.toLowerCase().includes(cityLower);
+  });
+  
+  console.log(`Filtered ${propertiesList.length} properties -> ${filteredByCity.length} in ${city}`);
+  
+  if (filteredByCity.length === 0) {
+    statusText.textContent = `No properties found in ${city}.`;
+    cardContainer.innerHTML = `
+      <div style="padding: 40px; text-align: center; background: white; border-radius: 16px;">
+        <div style="font-size: 3rem; margin-bottom: 20px;">😕</div>
+        <h3 style="color: #2c3e50; margin-bottom: 15px;">No Properties Found in ${city}</h3>
+        <p style="color: #666;">The backend returned ${propertiesList.length} properties, but none matched ${city}.</p>
+        <p style="color: #999; margin-top: 10px; font-size: 0.9em;">Try calculating your budget for a different city.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  // Sort filtered properties by price to prioritize affordable ones
+  const sortedProperties = [...filteredByCity].sort((a, b) => {
     const priceA = a.buyingPrice ?? a.price ?? 0;
     const priceB = b.buyingPrice ?? b.price ?? 0;
     return priceA - priceB;
@@ -1188,20 +1210,21 @@ function renderRecommendations() {
 
   recSection.style.display = "block";
 
-  // Show confidence indicator if less than perfect
-  if (profile.confidence < 90) {
-    recContainer.innerHTML = `
-      <div style="padding: 15px; background: #f0f8ff; border-radius: 8px; margin-bottom: 15px; text-align: center;">
-        <p style="margin: 0; color: #2c3e50;">📊 Recommendation Confidence: ${profile.confidence}%</p>
-        <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #666;">
-          ${profile.confidence < 60 ? 'Like more properties for better matches' : 'Good confidence level!'}
-        </p>
-      </div>
-    `;
+  // Update the heading with confidence level
+  const recHeading = recSection.querySelector('h4');
+  if (recHeading) {
+    recHeading.innerHTML = `✨ Recommended For You <span style="font-weight: 400; font-size: 0.85rem; color: #666;">(Confidence: ${profile.confidence}%)</span>`;
   }
 
+  // Clear container and set grid layout
+  recContainer.innerHTML = '';
+  recContainer.style.display = 'grid';
+  recContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(320px, 1fr))';
+  recContainer.style.gap = '30px';
+  recContainer.style.marginBottom = '40px';
+  
   // Render top recommendations (limit to 10 for performance)
-  scoredProperties.slice(0, 10).forEach((item) => {
+  scoredProperties.slice(0, 10).forEach((item, index) => {
     const p = item.property;
     const isSurprise = item.isSurprise || false;
     const matchPercent = Math.round(item.score);
@@ -1223,38 +1246,91 @@ function renderRecommendations() {
         (p.images[0].originalUrl || p.images[0].url)) ||
       null;
 
-    const card = document.createElement("div");
-    card.className = "rec-card";
-    card.innerHTML = `
-      ${
-        imgUrl
-          ? `<div class="rec-image-wrapper">
-               <img src="${imgUrl}"
-                    alt="${title}"
-                    onerror="this.style.display='none';" />
-             </div>`
-          : ""
-      }
-      <div class="rec-info">
-        <h5>${title}</h5>
-        <p>${city}</p>
-        <p>${price === "N/A" ? "Price on request" : price + " €"} · ${
-      sqm === "N/A" ? "?" : sqm
-    } m² · ${rooms} rooms</p>
-        ${isSurprise ? '<p style="margin-top: 8px;"><span style="background: #9b59b6; color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem;">✨ Surprise Pick</span></p>' : ''}
+    // Get external property link
+    const propertyUrl = (Array.isArray(p.platforms) && p.platforms.length > 0) 
+      ? p.platforms[0].url 
+      : (p.link || p.exposeUrl || '#');
+    const hasValidUrl = propertyUrl !== '#' && propertyUrl !== '';
+
+    // Determine match badge style
+    let badgeClass = 'fair';
+    let badgeLabel = 'Match';
+    if (matchPercent >= 85) {
+      badgeClass = 'excellent';
+      badgeLabel = 'Perfect';
+    } else if (matchPercent >= 70) {
+      badgeClass = 'good';
+      badgeLabel = 'Great';
+    } else if (matchPercent >= 60) {
+      badgeClass = 'fair';
+      badgeLabel = 'Good';
+    }
+
+    const cardLink = document.createElement("a");
+    cardLink.href = propertyUrl;
+    cardLink.target = "_blank";
+    cardLink.rel = "noopener noreferrer";
+    cardLink.className = "property-card-link";
+    if (!hasValidUrl) {
+      cardLink.style.pointerEvents = 'none';
+      cardLink.style.cursor = 'default';
+    }
+    cardLink.style.animationDelay = `${index * 0.05}s`;
+    
+    cardLink.innerHTML = `
+      <div class="property-card">
+        <div class="property-image">
+          ${imgUrl ? `<img src="${imgUrl}" alt="${title}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23ecf0f1%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%237f8c8d%22 font-family=%22Arial%22 font-size=%2220%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Image%3C/text%3E%3C/svg%3E';">` : 
+                     `<div style="width: 100%; height: 220px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">🏠</div>`}
+          <div class="match-badge ${badgeClass}">
+            <span class="match-score">${matchPercent}%</span>
+            <span class="match-label">${isSurprise ? '✨ Surprise' : badgeLabel}</span>
+          </div>
+        </div>
+        <div class="property-content">
+          <h4 class="property-title">${title}</h4>
+          <p class="property-location"><i class="fas fa-map-marker-alt"></i> ${city}</p>
+          
+          <div class="property-stats">
+            <div class="stat">
+              <span class="stat-value">${price === "N/A" ? "N/A" : "€" + price.toLocaleString('de-DE')}</span>
+              <span class="stat-label">Price</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value">${sqm === "N/A" ? "?" : sqm}m²</span>
+              <span class="stat-label">Size</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value">${rooms}</span>
+              <span class="stat-label">Rooms</span>
+            </div>
+          </div>
+          
+          ${isSurprise ? `
+            <div class="match-reasons">
+              <p class="reasons-title">Why this matches:</p>
+              <ul>
+                <li>✨ Surprise pick - different but worth considering!</li>
+              </ul>
+            </div>
+          ` : ''}
+          
+          <div class="view-details-hint">
+            <i class="fas fa-external-link-alt"></i> Click to view details
+          </div>
+        </div>
       </div>
     `;
 
-    card.addEventListener("click", () => openDetail(p));
-    recContainer.appendChild(card);
+    recContainer.appendChild(cardLink);
   });
   
-  // Add "Continue Swiping" button at the end
+  // Add "Continue Swiping" button at the end (spans full grid width)
   const continueButton = document.createElement("div");
-  continueButton.style.cssText = "text-align: center; margin-top: 30px; padding: 20px;";
+  continueButton.style.cssText = "grid-column: 1 / -1; text-align: center; margin-top: 10px; padding: 30px 20px; background: rgba(255,255,255,0.5); border-radius: 16px;";
   continueButton.innerHTML = `
     <p style="color: #666; margin-bottom: 15px; font-size: 0.95rem;">
-      Want to refine your matches? Swipe through more properties!
+      <i class="fas fa-heart" style="color: #e74c3c;"></i> Want to refine your matches? Swipe through more properties!
     </p>
     <button onclick="continueSwipingFromResults()" 
             style="padding: 12px 30px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 500; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3); transition: all 0.3s;"
@@ -1295,8 +1371,14 @@ function renderLikedHomes() {
   }
 
   likedSection.style.display = "block";
+  
+  // Set grid layout for liked properties
+  likedContainer.style.display = 'grid';
+  likedContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(320px, 1fr))';
+  likedContainer.style.gap = '30px';
+  likedContainer.style.marginBottom = '40px';
 
-  likedProperties.forEach((p) => {
+  likedProperties.forEach((p, index) => {
     const title = p.title || "Untitled property";
     const price = p.buyingPrice ?? p.price ?? "N/A";
     const sqm = p.squareMeter ?? p.livingSpace ?? "N/A";
@@ -1314,29 +1396,60 @@ function renderLikedHomes() {
         (p.images[0].originalUrl || p.images[0].url)) ||
       null;
 
-    const card = document.createElement("div");
-    card.className = "rec-card";
-    card.innerHTML = `
-      ${
-        imgUrl
-          ? `<div class="rec-image-wrapper">
-               <img src="${imgUrl}"
-                    alt="${title}"
-                    onerror="this.style.display='none';" />
-             </div>`
-          : ""
-      }
-      <div class="rec-info">
-        <h5>${title}</h5>
-        <p>${city}</p>
-        <p>${price === "N/A" ? "Price on request" : price + " €"} · ${
-      sqm === "N/A" ? "?" : sqm
-    } m² · ${rooms} rooms</p>
+    // Get external property link
+    const propertyUrl = (Array.isArray(p.platforms) && p.platforms.length > 0) 
+      ? p.platforms[0].url 
+      : (p.link || p.exposeUrl || '#');
+    const hasValidUrl = propertyUrl !== '#' && propertyUrl !== '';
+
+    const cardLink = document.createElement("a");
+    cardLink.href = propertyUrl;
+    cardLink.target = "_blank";
+    cardLink.rel = "noopener noreferrer";
+    cardLink.className = "property-card-link";
+    if (!hasValidUrl) {
+      cardLink.style.pointerEvents = 'none';
+      cardLink.style.cursor = 'default';
+    }
+    cardLink.style.animationDelay = `${index * 0.05}s`;
+    
+    cardLink.innerHTML = `
+      <div class="property-card">
+        <div class="property-image">
+          ${imgUrl ? `<img src="${imgUrl}" alt="${title}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23ecf0f1%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%237f8c8d%22 font-family=%22Arial%22 font-size=%2220%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Image%3C/text%3E%3C/svg%3E';">` : 
+                     `<div style="width: 100%; height: 220px; background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">❤️</div>`}
+          <div class="match-badge excellent">
+            <span class="match-score">❤️</span>
+            <span class="match-label">Liked</span>
+          </div>
+        </div>
+        <div class="property-content">
+          <h4 class="property-title">${title}</h4>
+          <p class="property-location"><i class="fas fa-map-marker-alt"></i> ${city}</p>
+          
+          <div class="property-stats">
+            <div class="stat">
+              <span class="stat-value">${price === "N/A" ? "N/A" : "€" + price.toLocaleString('de-DE')}</span>
+              <span class="stat-label">Price</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value">${sqm === "N/A" ? "?" : sqm}m²</span>
+              <span class="stat-label">Size</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value">${rooms}</span>
+              <span class="stat-label">Rooms</span>
+            </div>
+          </div>
+          
+          <div class="view-details-hint">
+            <i class="fas fa-external-link-alt"></i> Click to view details
+          </div>
+        </div>
       </div>
     `;
 
-    card.addEventListener("click", () => openDetail(p));
-    likedContainer.appendChild(card);
+    likedContainer.appendChild(cardLink);
   });
 }
 
