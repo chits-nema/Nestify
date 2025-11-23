@@ -5,13 +5,16 @@ let allProperties = [];     // all results from backend (up to size=50)
 let properties = [];        // 15 random homes for this session
 let currentIndex = 0;
 let likedProperties = [];
+let userBudget = 0;         // User's calculated budget
 
-// Backend URL (FastAPI on port 4000)
-const BACKEND_URL = "http://127.0.0.1:4000";
+// Backend URL (FastAPI on port 8000)
+const BACKEND_URL = "http://127.0.0.1:8000";
 
 // How many homes you want to show per swipe session
 const MAX_CARDS = 15;  // Initial batch size
 const MAX_TOTAL_SWIPES = 50;  // Maximum total swipes allowed
+
+// Note: formatCurrency is defined in budget.js which loads before this script
 
 // DOM elements
 const cardContainer = document.getElementById("card-container");
@@ -45,10 +48,8 @@ let swipeCard = null;
 document.addEventListener("DOMContentLoaded", () => {
   if (!cardContainer) return;
 
-  // Initial batch for swipe (city/region can be adjusted)
-  fetchProperties("München", "Bayern");
-
-  // Buttons removed - using swipe gestures only
+  // Wait for budget.js to call initSwipeMode with properties
+  // Don't fetch properties automatically
   
   if (detailCloseBtn) {
     detailCloseBtn.addEventListener("click", () => {
@@ -56,6 +57,90 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+// --------------------------------------------------------
+// Initialize swipe mode with properties from budget.js
+function initSwipeMode(propertiesList, budget, city, region) {
+  console.log(`initSwipeMode called with ${propertiesList?.length || 0} properties, budget: ${formatCurrency(budget)}, city: ${city}`);
+  
+  if (!propertiesList || propertiesList.length === 0) {
+    statusText.textContent = "No properties found from backend.";
+    cardContainer.innerHTML = `
+      <div style="padding: 40px; text-align: center; background: white; border-radius: 16px;">
+        <div style="font-size: 3rem; margin-bottom: 20px;">😕</div>
+        <h3 style="color: #2c3e50; margin-bottom: 15px;">No Properties Found</h3>
+        <p style="color: #666;">The backend returned no properties for ${city || 'your area'}.</p>
+      </div>
+    `;
+    return;
+  }
+
+  userBudget = budget;
+  
+  // Sort properties by price to prioritize affordable ones
+  const sortedProperties = [...propertiesList].sort((a, b) => {
+    const priceA = a.buyingPrice ?? a.price ?? 0;
+    const priceB = b.buyingPrice ?? b.price ?? 0;
+    return priceA - priceB;
+  });
+  
+  // Take a mix: prioritize affordable but include some aspirational properties
+  // Take 70% within 150% of budget, and 30% above that for variety
+  const maxAffordable = budget * 1.5;
+  const affordableProperties = sortedProperties.filter(p => {
+    const price = p.buyingPrice ?? p.price ?? 0;
+    return price > 0 && price <= maxAffordable;
+  });
+  
+  const aspirationalProperties = sortedProperties.filter(p => {
+    const price = p.buyingPrice ?? p.price ?? 0;
+    return price > maxAffordable;
+  });
+  
+  // Mix: 70% affordable, 30% aspirational (if available)
+  const affordableCount = Math.ceil(sortedProperties.length * 0.7);
+  const aspirationalCount = sortedProperties.length - affordableCount;
+  
+  const mixedProperties = [
+    ...affordableProperties.slice(0, affordableCount),
+    ...aspirationalProperties.slice(0, aspirationalCount)
+  ];
+  
+  console.log(`Budget: ${formatCurrency(budget)}`);
+  console.log(`Properties breakdown: ${affordableProperties.length} affordable (≤${formatCurrency(maxAffordable)}), ${aspirationalProperties.length} aspirational`);
+  console.log(`Showing ${mixedProperties.length} properties total`);
+  
+  if (mixedProperties.length === 0) {
+    statusText.textContent = "No properties found.";
+    cardContainer.innerHTML = `
+      <div style="padding: 40px; text-align: center; background: white; border-radius: 16px;">
+        <div style="font-size: 3rem; margin-bottom: 20px;">😕</div>
+        <h3 style="color: #2c3e50; margin-bottom: 15px;">No Properties Found</h3>
+        <p style="color: #666; margin-bottom: 15px;">Your budget: ${formatCurrency(budget)}</p>
+        <p style="color: #666;">Found ${propertiesList.length} properties in ${city || 'your area'}.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  allProperties = mixedProperties;
+  properties = pickRandomSubset(allProperties, MAX_CARDS);
+  currentIndex = 0;
+  likedProperties = [];
+
+  const withinBudget = allProperties.filter(p => (p.buyingPrice ?? p.price) <= budget).length;
+  const stretchCount = allProperties.filter(p => {
+    const price = p.buyingPrice ?? p.price ?? 0;
+    return price > budget && price <= maxAffordable;
+  }).length;
+  const dreamCount = allProperties.length - withinBudget - stretchCount;
+  
+  statusText.textContent = `Found ${allProperties.length} properties in ${city || 'your area'} (${withinBudget} within budget, ${stretchCount} stretch, ${dreamCount} aspirational). Swipe through ${properties.length} to start!`;
+  statusText.style.color = '#2ecc71';
+  
+  console.log(`Starting swipe with ${properties.length} properties`);
+  showCurrentProperty();
+}
 
 // --------------------------------------------------------
 // Fetch properties from backend (ThinkImmo proxy or demo)
@@ -138,13 +223,20 @@ function showCurrentProperty() {
   currentImageIndex = 0; // Reset image index for new property
 
   const title = p.title || "Untitled property";
-  const price = p.buyingPrice ?? p.price ?? "N/A";
+  const price = p.buyingPrice ?? p.price ?? 0;
   const sqm = p.squareMeter ?? p.livingSpace ?? "N/A";
   const rooms = p.rooms ?? "N/A";
   const city =
     (p.address &&
       (p.address.city || p.address.displayName || p.address._normalized_city)) ||
     "Unknown location";
+  
+  // Calculate affordability
+  const priceRatio = userBudget > 0 ? (price / userBudget) : 1;
+  const affordability = priceRatio <= 0.9 ? 'affordable' : priceRatio <= 1.0 ? 'within-budget' : 'stretch';
+  const affordabilityLabel = priceRatio <= 0.9 ? '✓ Affordable' : priceRatio <= 1.0 ? '✓ Within Budget' : '⚠ Stretch';
+  const affordabilityColor = priceRatio <= 0.9 ? '#2ecc71' : priceRatio <= 1.0 ? '#3498db' : '#f39c12';
+  const budgetPercent = Math.round(priceRatio * 100);
 
   // Get all images with better error handling
   const images = p.images && p.images.length > 0 
@@ -223,10 +315,16 @@ function showCurrentProperty() {
       <div class="card-content">
         <h2 class="card-title">${title}</h2>
         <p class="card-price">${
-          price === "N/A" ? "Price on request" : price + " €"
+          price === 0 ? "Price on request" : formatCurrency(price)
         }</p>
         <p class="card-details">${sqm} m² · ${rooms} rooms</p>
         <p class="card-location">${city}</p>
+        ${userBudget > 0 ? `
+          <div style="margin-top: 12px; padding: 8px 12px; background: ${affordabilityColor}15; border-left: 3px solid ${affordabilityColor}; border-radius: 4px;">
+            <span style="color: ${affordabilityColor}; font-weight: 600; font-size: 0.9rem;">${affordabilityLabel}</span>
+            <span style="color: #666; font-size: 0.85rem; margin-left: 8px;">${budgetPercent}% of your budget</span>
+          </div>
+        ` : ''}
       </div>
     </div>
   `;

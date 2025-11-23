@@ -1,204 +1,268 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nestify - Find Your Forever Home</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nestify - Find Your Forever Home</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header>
-        <nav class="navbar">
-            <div class="container">
-                <div class="logo">
-                    <h1>🏡 Nestify</h1>
-                </div>
-                <ul class="nav-links">
-                    <li><a href="#home">Home</a></li>
-                    <li><a href="#listings">Listings</a></li>
-                    <li><a href="#about">About</a></li>
-                    <li><a href="#contact">Contact</a></li>
-                </ul>
-            </div>
-        </nav>
-    </header>
-
-<!-- HERO: "I know / I don't know" -->
-<section id="home" class="hero">
-    <div class="hero-content">
-        <h2>Find Your Forever Home</h2>
-        <p>Let Nestify help you discover the places that actually feel like you.</p>
-
-        <div class="choice-grid">
-            <div class="choice-card">
-                <h3>I know what I want</h3>
-                <p>Use smart filters or upload your Pinterest mood board.</p>
-                <button onclick="goToListings()">Start with filters</button>
-                <!-- your friend can hook Pinterest board here later -->
-            </div>
-            <div class="choice-card">
-                <h3>I don’t really know</h3>
-                <p>Swipe through homes Tinder-style and we’ll learn your taste.</p>
-                <button onclick="goToSwipe()">Start swiping</button>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- FILTERS + LISTINGS (for "I know what I want") -->
-<section id="filters" class="filter-section">
+  <nav class="navbar">
     <div class="container">
-        <h3>Filter Your Search</h3>
-        <div class="filters">
-            <div class="filter-group">
-                <label for="typeFilter">Home Type:</label>
-                <select id="typeFilter" onchange="applyFilters()">
-                    <option value="all">All Types</option>
-                    <option value="house">House</option>
-                    <option value="apartment">Apartment</option>
-                    <option value="condo">Condo</option>
-                    <option value="townhouse">Townhouse</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label for="bedroomFilter">Bedrooms:</label>
-                <select id="bedroomFilter" onchange="applyFilters()">
-                    <option value="all">Any</option>
-                    <option value="1">1+</option>
-                    <option value="2">2+</option>
-                    <option value="3">3+</option>
-                    <option value="4">4+</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label for="priceFilter">Max Price:</label>
-                <select id="priceFilter" onchange="applyFilters()">
-                    <option value="all">Any Price</option>
-                    <option value="300000">$300,000</option>
-                    <option value="500000">$500,000</option>
-                    <option value="750000">$750,000</option>
-                    <option value="1000000">$1,000,000</option>
-                </select>
-            </div>
-        </div>
+      <div class="logo"><h1>🏡 Nestify</h1></div>
+      <ul class="nav-links">
+        <li><a href="#">Home</a></li>
+        <li><a href="swipe.html">Swipe</a></li>
+      </ul>
     </div>
-</section>
+  </nav>
 
-<section id="listings" class="listings-section">
-    <div class="container">
-        <h3>Available Homes</h3>
-        <div id="listingsContainer" class="listings-grid"></div>
-        <div id="noResults" class="no-results" style="display:none;">
-            <p>No homes found matching your criteria. Try adjusting your filters.</p>
-        </div>
+  <div class="hero">
+    <h2>Find Your Forever Home</h2>
+    <p>Calculate your budget and discover properties within your reach</p>
+  </div>
+
+  <div class="main-container">
+    <!-- Step Indicator -->
+    <div class="steps">
+      <div class="step active" id="step1"><span class="step-num">1</span> Budget</div>
+      <div class="step" id="step2"><span class="step-num">2</span> Results</div>
+      <div class="step" id="step3"><span class="step-num">3</span> Explore</div>
+      <div class="step" id="step3b"><span class="step-num">3</span> Swipe</div>
     </div>
-</section>
 
-<!-- SWIPE SECTION (for "I don't know" path) -->
-<section id="tinder" class="tinder-section">
-    <div class="container">
-        <h3 class="tinder-title">Swipe Your Future Home</h3>
-        <p class="tinder-subtitle">
-            Not sure what you want? Swipe through properties and let Nestify learn your style.
-        </p>
-
-        <div id="card-container" class="tinder-card-container">
-            <p>Loading properties...</p>
-        </div>
-
-        <div style="text-align: center; margin: 15px auto 0 auto; color: #666; font-size: 0.9rem; max-width: 100%; width: 100%;">
-            <p style="margin: 0; padding: 0;">👈 Swipe left to pass • Swipe right to like 👉</p>
+    <!-- STEP 1: Calculator -->
+    <div class="section active" id="sec1">
+      <div class="calc-panel">
+        <h3>💰 Calculate Your Budget</h3>
+        
+        <div class="form-group">
+          <label>Monthly Net Household Income</label>
+          <div class="input-wrap">
+            <input type="number" id="salary" value="5000" min="0" step="100">
+            <span class="suffix">€/mo</span>
+          </div>
+          <div class="input-hint">Combined take-home pay</div>
         </div>
         
-        <p id="status-text" class="tinder-status"></p>
-
-        <!-- Recommended homes after swiping -->
-        <div id="recommendations" class="recommendations-section" style="display:none;">
-            <h4>Homes you might love</h4>
-            <div id="recommendations-container" class="recommendations-grid"></div>
+        <div class="form-group">
+          <label>Available Equity</label>
+          <div class="input-wrap">
+            <input type="number" id="equity" value="100000" min="0" step="1000">
+            <span class="suffix">€</span>
+          </div>
+          <div class="input-hint">Down payment + savings</div>
         </div>
-
-        <!-- Homes you liked in this session -->
-        <div id="liked-section" class="recommendations-section" style="display:none;">
-            <h4>Homes You Swiped Right ❤️</h4>
-            <p style="color: #666; font-size: 0.95rem; margin-top: 5px;">All properties you liked so far</p>
-            <div id="liked-container" class="recommendations-grid"></div>
-        </div>  
-
-        <!-- Detail view for a single home -->
-        <div id="detail-section" class="detail-section" style="display:none;">
-            <div class="detail-image-wrapper">
-                <img id="detail-image" src="" alt="Home image">
-            </div>
-            <div class="detail-info">
-                <h4 id="detail-title"></h4>
-                <p id="detail-location"></p>
-                <p id="detail-price"></p>
-                <p id="detail-size"></p>
-                <p id="detail-rooms"></p>
-
-                <a id="detail-link"
-                href="#"
-                target="_blank"
-                style="display:none; margin-top:0.5rem; color:#3498db; text-decoration:underline;">
-                View full listing on partner portal
-                </a>
-
-                <button id="detail-close-btn" class="detail-close-btn">Close</button>
-            </div>
+        
+        <div class="form-group">
+          <label>Existing Loans (Rate/Leasing)</label>
+          <div class="input-wrap">
+            <input type="number" id="loans" value="0" min="0" step="50">
+            <span class="suffix">€/mo</span>
+          </div>
         </div>
-    </div>
-</section>
-
-<!-- ABOUT -->
-<section id="about" class="about-section">
-    <div class="container">
-        <h3>About Nestify</h3>
-        <p>
-            Nestify helps Gen Z and Millennials find homes that match their lifestyle, not just their budget.
-            We combine real listings with a playful swipe interface and budget tools.
-        </p>
-        <div class="features">
-            <div class="feature">
-                <span class="icon">🔍</span>
-                <h4>Smart Search</h4>
-                <p>Use filters or Pinterest inspiration to narrow down your options.</p>
-            </div>
-            <div class="feature">
-                <span class="icon">❤️</span>
-                <h4>Personalized Swipes</h4>
-                <p>Our swipe view learns what you like in just a few taps.</p>
-            </div>
-            <div class="feature">
-                <span class="icon">📊</span>
-                <h4>Budget Awareness</h4>
-                <p>Get a feeling for what’s realistic in your price range.</p>
-            </div>
+        
+        <div class="form-group">
+          <label>Fixed Repayment Period?</label>
+          <div class="radio-row">
+            <label><input type="radio" name="fixed" value="no" checked> No</label>
+            <label><input type="radio" name="fixed" value="yes"> Yes</label>
+          </div>
         </div>
+        
+        <div class="form-group">
+          <label>Desired Monthly Payment</label>
+          <div class="input-wrap">
+            <input type="number" id="monthlyRate" value="2000" min="0" step="50">
+            <span class="suffix">€/mo</span>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Target City</label>
+          <select id="city">
+            <option value="München">Bayern - München</option>
+            <option value="Berlin">Berlin - Berlin</option>
+            <option value="Hamburg">Hamburg - Hamburg</option>
+            <option value="Frankfurt">Hessen - Frankfurt</option>
+            <option value="Köln">Nordrhein-Westfalen - Köln</option>
+            <option value="Stuttgart">Baden-Württemberg - Stuttgart</option>
+          </select>
+        </div>
+        
+        <button class="calc-btn" id="calculateBtn">🔍 Calculate My Budget</button>
+      </div>
     </div>
-</section>
 
-<!-- CONTACT -->
-<section id="contact" class="contact-section">
-    <div class="container">
-        <h3>Get in Touch</h3>
-        <p>Have questions? We're here to help you find your perfect home.</p>
-        <form class="contact-form">
-            <input type="text" placeholder="Your Name" required>
-            <input type="email" placeholder="Your Email" required>
-            <textarea placeholder="Your Message" rows="5" required></textarea>
-            <button type="submit">Send Message</button>
-        </form>
+    <!-- STEP 2: Results -->
+    <div class="section" id="sec2">
+      <div class="results-grid">
+        <!-- Main Result Card -->
+        <div class="result-card wide">
+          <h4>🏠 Your Maximum Property Price</h4>
+          <div class="big-num gradient" id="rMaxPrice">€0</div>
+          <div class="sub-text">Based on your income, equity, and desired payment</div>
+        </div>
+        
+        <!-- Loan Details -->
+        <div class="result-card">
+          <h4>💳 Loan Details</h4>
+          <div class="stat-row"><span class="stat-label">Loan Amount</span><span class="stat-val" id="rLoan">€0</span></div>
+          <div class="stat-row"><span class="stat-label">Interest Rate</span><span class="stat-val" id="rInterest">0%</span></div>
+          <div class="stat-row"><span class="stat-label">Effective Rate</span><span class="stat-val" id="rEffective">0%</span></div>
+          <div class="stat-row"><span class="stat-label">Monthly Payment</span><span class="stat-val" id="rMonthly">€0</span></div>
+          <div class="stat-row"><span class="stat-label">Amortisation</span><span class="stat-val" id="rAmort">0%</span></div>
+          <div class="bank-box">
+            <small>Best rate from</small>
+            <div class="name" id="rBank">-</div>
+          </div>
+        </div>
+        
+        <!-- Duration -->
+        <div class="result-card">
+          <h4>⏱️ Repayment Duration</h4>
+          <div class="big-num" id="rYears">0</div>
+          <div class="sub-text" id="rDuration">years total</div>
+          <div class="dur-bar"><div class="dur-fill" id="durFill"></div></div>
+          <div class="dur-labels">
+            <span id="rFixed">0 yrs fixed</span>
+            <span id="rRemain">0 yrs remaining</span>
+          </div>
+        </div>
+        
+        <!-- Total Payments -->
+        <div class="result-card">
+          <h4>💸 Total Payments</h4>
+          <div class="stat-row"><span class="stat-label">Total Payment</span><span class="stat-val" id="rTotal">€0</span></div>
+          <div class="stat-row"><span class="stat-label">Total Interest</span><span class="stat-val red" id="rTotalInt">€0</span></div>
+          <div class="stat-row"><span class="stat-label">Remaining after fixed</span><span class="stat-val" id="rRemainDebt">€0</span></div>
+        </div>
+        
+        <!-- Additional Costs -->
+        <div class="result-card">
+          <h4>📋 Additional Purchase Costs</h4>
+          <div class="stat-row"><span class="stat-label">Notary (<span id="pctNotary">0</span>%)</span><span class="stat-val" id="rNotary">€0</span></div>
+          <div class="stat-row"><span class="stat-label">Property Tax (<span id="pctTax">0</span>%)</span><span class="stat-val" id="rTax">€0</span></div>
+          <div class="stat-row"><span class="stat-label">Broker (<span id="pctBroker">0</span>%)</span><span class="stat-val" id="rBroker">€0</span></div>
+          <div class="stat-row total-row"><span class="stat-label">Total Extra</span><span class="stat-val" id="rExtraTotal">€0</span></div>
+          <div class="bar-container">
+            <div class="bar-seg notary" id="barNotary"></div>
+            <div class="bar-seg tax" id="barTax"></div>
+            <div class="bar-seg broker" id="barBroker"></div>
+          </div>
+          <div class="cost-legend">
+            <span><div class="dot notary"></div>Notary</span>
+            <span><div class="dot tax"></div>Tax</span>
+            <span><div class="dot broker"></div>Broker</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="action-btns">
+        <button class="btn secondary" onclick="goToStep(1)">← Adjust</button>
+        <button class="btn primary" id="exploreBtn">🗺️ View Heatmap</button>
+        <button class="btn primary" id="swipeBtn">❤️ Swipe Properties</button>
+      </div>
     </div>
-</section>
 
-<footer>
-    <div class="container">
-        <p>&copy; 2025 Nestify. Helping you find your forever home.</p>
+    <!-- STEP 3b: Swipe Mode -->
+    <div class="section" id="sec3b">
+      <div class="swipe-header">
+        <h3>Swipe Your Future Home</h3>
+        <p>Properties within your budget of <span id="swipeBudget">€0</span></p>
+      </div>
+      
+      <div class="swipe-container">
+        <div id="card-container" class="card-container">
+          <p>Loading properties...</p>
+        </div>
+        
+        <div class="swipe-hint">
+          <span>👈 Swipe left to pass</span>
+          <span>Swipe right to like 👉</span>
+        </div>
+        
+        <p id="status-text" class="swipe-status"></p>
+      </div>
+      
+      <!-- Liked Properties -->
+      <div id="liked-section" class="liked-section" style="display:none;">
+        <h4>❤️ Properties You Liked</h4>
+        <div id="liked-container" class="prop-grid"></div>
+      </div>
+      
+      <!-- Recommendations -->
+      <div id="recommendations" class="recs-section" style="display:none;">
+        <h4>✨ Recommended For You</h4>
+        <div id="recommendations-container" class="prop-grid"></div>
+      </div>
+      
+      <!-- Detail View Modal -->
+      <div id="detail-section" class="detail-section" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow:auto;">
+        <div style="max-width:800px; margin:50px auto; background:white; border-radius:12px; padding:30px; position:relative;">
+          <button id="detail-close-btn" style="position:absolute; top:20px; right:20px; background:#e74c3c; color:white; border:none; border-radius:50%; width:40px; height:40px; font-size:20px; cursor:pointer;">✕</button>
+          <img id="detail-image" style="width:100%; border-radius:8px; margin-bottom:20px;" />
+          <h2 id="detail-title" style="margin-bottom:10px;"></h2>
+          <p id="detail-location" style="color:#666; margin-bottom:15px;"></p>
+          <p id="detail-price" style="font-size:24px; font-weight:bold; color:#2ecc71; margin-bottom:10px;"></p>
+          <p id="detail-size" style="margin-bottom:5px;"></p>
+          <p id="detail-rooms" style="margin-bottom:20px;"></p>
+          <a id="detail-link" href="#" target="_blank" style="display:inline-block; padding:12px 24px; background:#3498db; color:white; text-decoration:none; border-radius:8px; font-weight:500;">View Full Listing →</a>
+        </div>
+      </div>
+      
+      <div class="action-btns">
+        <button class="btn secondary" onclick="goToStep(2)">← Back to Results</button>
+        <button class="btn primary" onclick="loadHeatmap()">🗺️ View on Map</button>
+      </div>
     </div>
-</footer>
 
-<script src="script.js"></script>
-<script src="tinder.js"></script>
+    <!-- STEP 3: Heatmap -->
+    <div class="section" id="sec3">
+      <div class="map-wrap">
+        <div id="map"></div>
+        <div class="map-stats">
+          <div class="map-stat">
+            <div class="map-stat-val green" id="cntGreen">0</div>
+            <div class="map-stat-lbl">Affordable (≤90%)</div>
+          </div>
+          <div class="map-stat">
+            <div class="map-stat-val yellow" id="cntYellow">0</div>
+            <div class="map-stat-lbl">Stretch (90-110%)</div>
+          </div>
+          <div class="map-stat">
+            <div class="map-stat-val red" id="cntRed">0</div>
+            <div class="map-stat-lbl">Out of Range</div>
+          </div>
+        </div>
+        <div class="map-legend">
+          <div class="leg-item"><div class="leg-dot green"></div>Affordable</div>
+          <div class="leg-item"><div class="leg-dot yellow"></div>Stretch</div>
+          <div class="leg-item"><div class="leg-dot red"></div>Out of Range</div>
+        </div>
+      </div>
+      
+      <div class="prop-section">
+        <h3>📍 Properties in <span id="cityLabel">München</span></h3>
+        <div class="prop-grid" id="propGrid"></div>
+      </div>
+      
+      <div class="action-btns">
+        <button class="btn secondary" onclick="goToStep(2)">← Back to Results</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p id="loadTxt">Calculating...</p>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="budget.js"></script>
+  <script src="tinder.js"></script>
 </body>
 </html>
