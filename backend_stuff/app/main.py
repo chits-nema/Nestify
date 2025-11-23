@@ -59,7 +59,8 @@ class PropertySearchRequest(BaseModel):
         "LANDBUY",
         "GARAGEBUY",
         "OFFICEBUY",
-    ] = "APARTMENTBUY"
+        "ALL"  # Add option for all types
+    ] = "ALL"  # Default to all types for swipe
 
 
 # ---------- main search endpoint ----------
@@ -79,7 +80,6 @@ async def search_properties(req: PropertySearchRequest):
 
     payload = {
         "active": True,
-        "type": req.propertyType,
         "sortBy": "desc",
         "sortKey": "pricePerSqm",
         "from": req.from_index,
@@ -88,25 +88,16 @@ async def search_properties(req: PropertySearchRequest):
             "geoSearchQuery": norm_city,
             "geoSearchType": "town",
             "region": norm_region,
-        },
+        }
     }
     
-    payload = {
-    "active": True,
-    "type": req.propertyType,
-    "sortBy": "desc",
-    "sortKey": "pricePerSqm",
-    "from": req.from_index,
-    "size": req.size,
-    # "geoSearches": {
-    #     "geoSearchQuery": norm_city,
-    #     "geoSearchType": "town",
-    #     "region": norm_region,
-    # }
-    }
+    # Only add type filter if not searching for all types
+    if req.propertyType != "ALL":
+        payload["type"] = req.propertyType
 
 
     print("\n>>> PAYLOAD SENT TO THINKIMMO")
+    print(f">>> City: {req.city} -> {norm_city}, Region: {req.region} -> {norm_region}")
     print(payload)
 
     headers = {
@@ -136,11 +127,16 @@ async def search_properties(req: PropertySearchRequest):
 
         if total > 0 and results:
             print(f">>> SUCCESS with {total} listings from ThinkImmo")
+            print(f">>> Returning {len(results)} results in response")
+            print(f">>> First result keys: {list(results[0].keys()) if results else 'N/A'}")
             return data
 
-        print(">>> ThinkImmo returned 0 results, using demo data instead")
+        print(f">>> ThinkImmo returned 0 results for {norm_city}, {norm_region}")
+        print(f">>> Response data: {data}")
         demo = _demo_results(
-            note=f"ThinkImmo status {resp.status_code} total=0; using demo data.",
+            note=f"ThinkImmo status {resp.status_code} total=0 for {norm_city}; using demo data.",
+            city=norm_city,
+            region=norm_region
         )
         demo["thinkimmo_raw"] = data
         return demo
@@ -148,6 +144,8 @@ async def search_properties(req: PropertySearchRequest):
     print(">>> Non-success status from ThinkImmo, using demo data")
     demo = _demo_results(
         note=f"ThinkImmo status {resp.status_code}; using demo data.",
+        city=norm_city,
+        region=norm_region
     )
     demo["thinkimmo_body"] = resp.text[:300]
     return demo
@@ -155,17 +153,17 @@ async def search_properties(req: PropertySearchRequest):
 
 # ---------- demo data (for swipe + listings if ThinkImmo empty) ----------
 
-def _demo_results(note: str = "") -> dict:
+def _demo_results(note: str = "", city: str = "Munich", region: str = "Bayern") -> dict:
     return {
         "total": 6,
         "results": [
             {
                 "id": "demo-1",
-                "title": "Sunny Loft in Munich",
+                "title": f"Sunny Loft in {city}",
                 "buyingPrice": 450000,
                 "squareMeter": 60,
                 "rooms": 2,
-                "address": {"city": "Munich", "displayName": "Munich City Center"},
+                "address": {"city": city, "displayName": f"{city} City Center", "region": region},
                 "images": [
                     {
                         "originalUrl": "https://via.placeholder.com/800x500?text=Sunny+Loft"
@@ -174,11 +172,11 @@ def _demo_results(note: str = "") -> dict:
             },
             {
                 "id": "demo-2",
-                "title": "Cozy Studio in Schwabing",
+                "title": f"Cozy Studio in {city}",
                 "buyingPrice": 320000,
                 "squareMeter": 35,
                 "rooms": 1,
-                "address": {"city": "Munich", "displayName": "Schwabing"},
+                "address": {"city": city, "displayName": f"{city} Downtown", "region": region},
                 "images": [
                     {
                         "originalUrl": "https://via.placeholder.com/800x500?text=Cozy+Studio"
@@ -187,11 +185,11 @@ def _demo_results(note: str = "") -> dict:
             },
             {
                 "id": "demo-3",
-                "title": "Shared Flat near TUM",
+                "title": f"Shared Flat in {city}",
                 "buyingPrice": 280000,
                 "squareMeter": 45,
                 "rooms": 2,
-                "address": {"city": "Munich", "displayName": "Near University"},
+                "address": {"city": city, "displayName": f"{city} University Area", "region": region},
                 "images": [
                     {
                         "originalUrl": "https://via.placeholder.com/800x500?text=Shared+Flat"
@@ -200,11 +198,11 @@ def _demo_results(note: str = "") -> dict:
             },
             {
                 "id": "demo-4",
-                "title": "Riverside Apartment",
+                "title": f"Riverside Apartment in {city}",
                 "buyingPrice": 520000,
                 "squareMeter": 70,
                 "rooms": 3,
-                "address": {"city": "Munich", "displayName": "Isar Riverside"},
+                "address": {"city": city, "displayName": f"{city} Riverside", "region": region},
                 "images": [
                     {
                         "originalUrl": "https://via.placeholder.com/800x500?text=Riverside+Apartment"
@@ -213,11 +211,11 @@ def _demo_results(note: str = "") -> dict:
             },
             {
                 "id": "demo-5",
-                "title": "Modern Student Studio",
+                "title": f"Modern Student Studio in {city}",
                 "buyingPrice": 250000,
                 "squareMeter": 28,
                 "rooms": 1,
-                "address": {"city": "Munich", "displayName": "Student District"},
+                "address": {"city": city, "displayName": f"{city} Student District", "region": region},
                 "images": [
                     {
                         "originalUrl": "https://via.placeholder.com/800x500?text=Student+Studio"
@@ -226,11 +224,11 @@ def _demo_results(note: str = "") -> dict:
             },
             {
                 "id": "demo-6",
-                "title": "Family-Friendly Apartment",
+                "title": f"Family-Friendly Apartment in {city}",
                 "buyingPrice": 600000,
                 "squareMeter": 85,
                 "rooms": 4,
-                "address": {"city": "Munich", "displayName": "Quiet Neighborhood"},
+                "address": {"city": city, "displayName": f"{city} Quiet Neighborhood", "region": region},
                 "images": [
                     {
                         "originalUrl": "https://via.placeholder.com/800x500?text=Family+Apartment"

@@ -7,6 +7,7 @@ let map = null;
 let markers = [];
 let budgetData = null;
 let buyingPower = 0;
+let calculatorInputs = null; // Store user's calculator inputs
 
 // City centers for map
 const cityCenters = {
@@ -90,6 +91,7 @@ function getFormValues() {
 // STEP 1: Calculate Budget
 async function calculateBudget() {
   const payload = getFormValues();
+  calculatorInputs = payload; // Store for later use
   
   showLoading('Calculating your budget...');
   
@@ -123,6 +125,16 @@ async function calculateBudget() {
 function displayResults() {
   const scoring = budgetData?.scoringResult || {};
   const costs = budgetData?.additionalCosts || {};
+  
+  // Make sure we have the data stored
+  if (!calculatorInputs) {
+    calculatorInputs = getFormValues();
+    console.log('Stored calculator inputs from displayResults:', calculatorInputs);
+  }
+  if (!buyingPower && scoring.priceBuilding) {
+    buyingPower = scoring.priceBuilding;
+    console.log('Stored buying power from displayResults:', buyingPower);
+  }
   
   // Main result
   document.getElementById('rMaxPrice').textContent = formatCurrency(scoring.priceBuilding);
@@ -335,19 +347,48 @@ function renderPropertyCards(properties) {
 
 // Start Swipe Mode
 async function startSwipeMode() {
+  console.log('startSwipeMode called');
+  console.log('calculatorInputs:', calculatorInputs);
+  console.log('buyingPower:', buyingPower);
+  
+  if (!calculatorInputs || !buyingPower) {
+    console.error('Missing calculator inputs or budget!');
+    alert('Please calculate your budget first!');
+    goToStep(1);
+    return;
+  }
+  
   document.getElementById('swipeBudget').textContent = formatCurrency(buyingPower);
   
   showLoading('Loading properties for swiping...');
   
   try {
-    const formValues = getFormValues();
-    const payload = {
-      ...formValues,
-      property_type: 'APARTMENTBUY',
-      property_count: 200,
+    // Get city directly from form value (no need to split)
+    const city = calculatorInputs.city;
+    
+    // Map city to region
+    const cityToRegion = {
+      'München': 'Bayern',
+      'Berlin': 'Berlin',
+      'Hamburg': 'Hamburg',
+      'Frankfurt': 'Hessen',
+      'Köln': 'Nordrhein-Westfalen',
+      'Stuttgart': 'Baden-Wuerttemberg'  // Use transliterated form for ThinkImmo
     };
     
-    const response = await fetch(`${API_BASE}/heatmap/calculate`, {
+    const region = cityToRegion[city] || 'Bayern';
+    
+    console.log(`Using city: ${city}, region: ${region}`);
+    
+    const payload = {
+      city: city,
+      region: region,
+      propertyType: 'ALL',  // Get all property types for swipe discovery
+      size: 200,
+      from_index: 0
+    };
+    
+    const response = await fetch(`${API_BASE}/api/properties/search`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -357,9 +398,24 @@ async function startSwipeMode() {
     
     const data = await response.json();
     
-    // Pass properties to swipe module
+    console.log('Backend response:', data);
+    console.log(`Total properties: ${data.total || 0}`);
+    console.log(`Results array length: ${data.results?.length || 0}`);
+    console.log(`Budget: ${formatCurrency(buyingPower)}`);
+    console.log(`City: ${city}, Region: ${region}`);
+    
+    if (!data.results || data.results.length === 0) {
+      console.error('No results in backend response!');
+      alert(`Backend returned no properties. Total: ${data.total || 0}`);
+      hideLoading();
+      return;
+    }
+    
+    // Pass properties, budget, city, and region to swipe module
     if (typeof initSwipeMode === 'function') {
-      initSwipeMode(data.properties || [], buyingPower);
+      initSwipeMode(data.results || [], buyingPower, city, region);
+    } else {
+      console.error('initSwipeMode function not found in tinder.js');
     }
     
     goToStep('3b');

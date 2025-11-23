@@ -83,11 +83,11 @@
           <label>Target City</label>
           <select id="city">
             <option value="München">Bayern - München</option>
-            <option value="Berlin">Berlin</option>
-            <option value="Hamburg">Hamburg</option>
+            <option value="Berlin">Berlin - Berlin</option>
+            <option value="Hamburg">Hamburg - Hamburg</option>
             <option value="Frankfurt">Hessen - Frankfurt</option>
-            <option value="Köln">NRW - Köln</option>
-            <option value="Stuttgart">Stuttgart</option>
+            <option value="Köln">Nordrhein-Westfalen - Köln</option>
+            <option value="Stuttgart">Baden-Württemberg - Stuttgart</option>
           </select>
         </div>
         
@@ -174,7 +174,7 @@
       </div>
       
       <div class="swipe-container">
-        <div id="cardContainer" class="card-container">
+        <div id="card-container" class="card-container">
           <p>Loading properties...</p>
         </div>
         
@@ -183,19 +183,33 @@
           <span>Swipe right to like 👉</span>
         </div>
         
-        <p id="swipeStatus" class="swipe-status"></p>
+        <p id="status-text" class="swipe-status"></p>
       </div>
       
       <!-- Liked Properties -->
-      <div id="likedSection" class="liked-section" style="display:none;">
+      <div id="liked-section" class="liked-section" style="display:none;">
         <h4>❤️ Properties You Liked</h4>
-        <div id="likedGrid" class="prop-grid"></div>
+        <div id="liked-container" class="prop-grid"></div>
       </div>
       
       <!-- Recommendations -->
-      <div id="recsSection" class="recs-section" style="display:none;">
+      <div id="recommendations" class="recs-section" style="display:none;">
         <h4>✨ Recommended For You</h4>
-        <div id="recsGrid" class="prop-grid"></div>
+        <div id="recommendations-container" class="prop-grid"></div>
+      </div>
+      
+      <!-- Detail View Modal -->
+      <div id="detail-section" class="detail-section" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow:auto;">
+        <div style="max-width:800px; margin:50px auto; background:white; border-radius:12px; padding:30px; position:relative;">
+          <button id="detail-close-btn" style="position:absolute; top:20px; right:20px; background:#e74c3c; color:white; border:none; border-radius:50%; width:40px; height:40px; font-size:20px; cursor:pointer;">✕</button>
+          <img id="detail-image" style="width:100%; border-radius:8px; margin-bottom:20px;" />
+          <h2 id="detail-title" style="margin-bottom:10px;"></h2>
+          <p id="detail-location" style="color:#666; margin-bottom:15px;"></p>
+          <p id="detail-price" style="font-size:24px; font-weight:bold; color:#2ecc71; margin-bottom:10px;"></p>
+          <p id="detail-size" style="margin-bottom:5px;"></p>
+          <p id="detail-rooms" style="margin-bottom:20px;"></p>
+          <a id="detail-link" href="#" target="_blank" style="display:inline-block; padding:12px 24px; background:#3498db; color:white; text-decoration:none; border-radius:8px; font-weight:500;">View Full Listing →</a>
+        </div>
       </div>
       
       <div class="action-btns">
@@ -249,6 +263,6 @@
   <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
   <script src="budget.js"></script>
-  <script src="swipe.js"></script>
+  <script src="tinder.js"></script>
 </body>
 </html>
