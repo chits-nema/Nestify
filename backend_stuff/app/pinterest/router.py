@@ -8,9 +8,10 @@ from .pinterest_backend import PinterestPropertyAnalyzer
 
 router = APIRouter(prefix="/pinterest", tags=["pinterest"])
 
-# Optional Hugging Face key
+# Optional API keys
 HF_API_KEY = os.environ.get("HF_API_KEY", "")
-analyzer = PinterestPropertyAnalyzer(HF_API_KEY)
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+analyzer = PinterestPropertyAnalyzer(HF_API_KEY, OPENAI_API_KEY)
 
 
 def _convert_to_rss_url(url: str) -> str:

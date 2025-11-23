@@ -4,13 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pinterest Style Analyzer - Nestify</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="pinterest.css">
 </head>
 <body>
   <nav class="navbar">
     <div class="container">
-      <div class="logo"><a href="index.html" style="text-decoration: none; color: inherit;"><h1>🏡 Nestify</h1></a></div>
+      <div class="logo"><a href="index.html" style="text-decoration: none; color: inherit;"><h1><i class="fas fa-home"></i> Nestify</h1></a></div>
       <ul class="nav-links">
         <li><a href="index.html">Home</a></li>
         <li><a href="index.html?mode=calculator">Budget Calculator</a></li>
@@ -20,7 +21,7 @@
   </nav>
 
   <div class="hero">
-    <h2>🎨 Find Homes That Match Your Style</h2>
+    <h2><i class="fas fa-palette"></i> Find Homes That Match Your Style</h2>
     <p>Share your Pinterest board and we'll find properties that match your aesthetic</p>
   </div>
 
@@ -35,7 +36,7 @@
     <!-- STEP 1: Input Pinterest URL -->
     <div class="section active" id="pSec1">
       <div class="pinterest-panel">
-        <div class="pinterest-icon">📌</div>
+        <div class="pinterest-icon"><i class="fab fa-pinterest"></i></div>
         <h3>Share Your Pinterest Board</h3>
         <p class="subtitle">We'll analyze your pins to understand your dream home style</p>
         
@@ -48,7 +49,7 @@
             class="pinterest-input"
           >
           <div class="input-hint">
-            💡 Tip: Open your Pinterest board and copy the URL from your browser
+            <i class="fas fa-lightbulb" style="color: #D4A373;"></i> Tip: Open your Pinterest board and copy the URL from your browser
           </div>
         </div>
 
@@ -65,28 +66,28 @@
         </div>
 
         <button class="btn primary" id="analyzeBtn">
-          ✨ Analyze My Style
+          <i class="fas fa-sparkles"></i> Analyze My Style
         </button>
 
         <div class="pinterest-examples">
           <h4>How it works:</h4>
           <div class="example-grid">
             <div class="example-item">
-              <div class="example-icon">📍</div>
+              <div class="example-icon"><i class="fas fa-link"></i></div>
               <div class="example-text">
                 <strong>1. Share Board</strong>
                 <p>Paste your Pinterest board URL</p>
               </div>
             </div>
             <div class="example-item">
-              <div class="example-icon">🤖</div>
+              <div class="example-icon"><i class="fas fa-brain"></i></div>
               <div class="example-text">
                 <strong>2. AI Analysis</strong>
                 <p>We analyze your aesthetic preferences</p>
               </div>
             </div>
             <div class="example-item">
-              <div class="example-icon">🏡</div>
+              <div class="example-icon"><i class="fas fa-home"></i></div>
               <div class="example-text">
                 <strong>3. Find Matches</strong>
                 <p>Get properties matching your style</p>
@@ -100,7 +101,7 @@
     <!-- STEP 2: Analysis Results -->
     <div class="section" id="pSec2">
       <div class="analysis-panel">
-        <h3>🎨 Your Style Profile</h3>
+        <h3><i class="fas fa-palette"></i> Your Style Profile</h3>
         
         <div class="board-context" id="boardContext">
           <!-- Board context will be inserted here -->
@@ -120,7 +121,7 @@
     <!-- STEP 3: Property Matches -->
     <div class="section" id="pSec3">
       <div class="matches-panel">
-        <h3>🏡 Properties Matching Your Style</h3>
+        <h3><i class="fas fa-home"></i> Properties Matching Your Style</h3>
         <p class="subtitle" id="matchCount"></p>
         
         <div class="properties-grid" id="propertiesGrid">

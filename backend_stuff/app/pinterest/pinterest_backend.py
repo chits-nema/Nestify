@@ -6,26 +6,31 @@ from typing import List, Dict
 import re
 from collections import defaultdict
 import json
+import os
+from openai import OpenAI
 
 class PinterestPropertyAnalyzer:
-    def __init__(self, hf_api_key: str = None):
+    def __init__(self, hf_api_key: str = None, openai_api_key: str = None):
         self.hf_api_key = hf_api_key
         self.headers = {"Authorization": f"Bearer {hf_api_key}"} if hf_api_key else {}
+        self.openai_api_key = openai_api_key or os.environ.get("OPENAI_API_KEY")
+        self.openai_client = OpenAI(api_key=self.openai_api_key) if self.openai_api_key else None
         
-        # MORE SPECIFIC keywords
+        # MORE SPECIFIC keywords with better aesthetic detection
         self.feature_keywords = {
             # APARTMENTS - very specific urban living keywords
             'Apartment': [
                 'apartment', 'flat', 'condo', 'loft', 'studio', 'wohnung',
                 'city living', 'urban', 'downtown', 'high rise', 'apartment balcony',
                 'tiny balcony', 'small balcony', 'apt', 'rental', 'renter',
-                'cozy balcony', 'balcony decor', 'patio decorating'  # These are apartment-specific!
+                'cozy balcony', 'balcony decor', 'patio decorating'
             ],
             
-            # HOUSES - only use when clearly standalone
+            # HOUSES - expanded with cottage/farmhouse indicators
             'House': [
-                'house exterior', 'villa', 'cottage', 'standalone', 'detached',
-                'single family', 'driveway', 'front yard', 'backyard with fence'
+                'house', 'home', 'villa', 'cottage', 'farmhouse', 'cabin', 'colonial',
+                'standalone', 'detached', 'single family', 'driveway', 'front yard',
+                'backyard', 'yard', 'exterior', 'facade', 'porch', 'veranda'
             ],
             
             # BALCONY - small urban outdoor space
@@ -38,13 +43,42 @@ class PinterestPropertyAnalyzer:
             
             # GARDEN - large outdoor space (distinct from balcony)
             'Garden': [
-                'backyard', 'garden with lawn', 'large garden', 'landscaping',
-                'yard', 'outdoor space with grass', 'garden path'
+                'garden', 'backyard', 'yard', 'lawn', 'landscaping', 'outdoor space',
+                'cottage garden', 'wild garden', 'english garden', 'garden path',
+                'flower garden', 'herb garden', 'garden bed', 'garden border'
             ],
             
-            'Modern': ['modern', 'contemporary', 'minimalist', 'sleek', 'clean', 'industrial', 'scandinavian'],
-            'Rustic': ['rustic', 'farmhouse', 'country', 'wood', 'barn', 'cozy', 'cabin', 'vintage wood'],
-            'Vintage': ['vintage', 'antique', 'retro', 'classic', 'traditional', 'victorian', 'historic', 'old fashioned']
+            # STYLE FEATURES - greatly expanded
+            'Modern': [
+                'modern', 'contemporary', 'minimalist', 'sleek', 'clean', 'industrial',
+                'scandinavian', 'bauhaus', 'mid-century', 'minimalism', 'nordic'
+            ],
+            
+            'Rustic': [
+                'rustic', 'farmhouse', 'country', 'cottage', 'cozy', 'cabin', 'barn',
+                'cottagecore', 'farmcore', 'countryside', 'rural', 'provincial',
+                'stone', 'brick', 'timber', 'beam', 'reclaimed', 'weathered',
+                'worn', 'patina', 'aged', 'natural', 'organic', 'earthy'
+            ],
+            
+            'Vintage': [
+                'vintage', 'antique', 'retro', 'classic', 'traditional', 'victorian',
+                'historic', 'old', 'heritage', 'period', 'timeless', 'nostalgic',
+                '16th century', '17th century', '18th century', 'colonial', 'old-fashioned'
+            ],
+            
+            # NEW: Dark/Moody aesthetic
+            'Dark': [
+                'dark', 'moody', 'dramatic', 'gothic', 'black', 'charcoal', 'noir',
+                'dark aesthetic', 'dark interior', 'dark cottagecore', 'dark academia'
+            ],
+            
+            # NEW: Natural/Organic elements
+            'Natural': [
+                'natural', 'organic', 'botanical', 'plant', 'greenery', 'foliage',
+                'wood', 'wooden', 'timber', 'stone', 'earth tone', 'neutral',
+                'linen', 'cotton', 'wool', 'jute', 'rattan', 'wicker'
+            ]
         }
         
         self.city_to_region = {
@@ -70,7 +104,7 @@ class PinterestPropertyAnalyzer:
         feature_scores = self._calculate_feature_scores(analyzed_pins, board_context)
         print(f"\n📊 Adjusted Feature Scores: {feature_scores}")
         
-        search_payload = self._build_thinkimmo_payload(feature_scores, location)
+        search_payload = self._build_thinkimmo_payload(feature_scores, location, board_context)
         properties = self._query_thinkimmo(search_payload)
         
         return {
@@ -88,12 +122,15 @@ class PinterestPropertyAnalyzer:
         pins = []
         
         for entry in feed.entries:
-            image_url = self._extract_image_url(entry.get('description', ''))
+            description_html = entry.get('description', '')
+            image_url = self._extract_image_url(description_html)
+            caption = self._extract_caption(description_html)
             
             if image_url:
                 pins.append({
                     'title': entry.get('title', ''),
-                    'description': entry.get('description', ''),
+                    'description': description_html,
+                    'caption': caption,  # Extracted clean caption text
                     'image_url': image_url,
                     'link': entry.get('link', '')
                 })
@@ -105,12 +142,22 @@ class PinterestPropertyAnalyzer:
         match = re.search(r'src="([^"]+)"', description)
         return match.group(1) if match else None
     
+    def _extract_caption(self, description: str) -> str:
+        """Extract clean caption text from RSS description HTML"""
+        # Remove HTML tags
+        caption = re.sub(r'<[^>]+>', '', description)
+        # Decode HTML entities
+        caption = caption.replace('&quot;', '"').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
+        # Clean up whitespace
+        caption = ' '.join(caption.split())
+        return caption.strip()
+    
 # pinterest_analyzer.py - Update _analyze_board_context
 
     def _analyze_board_context(self, analyzed_pins: List[Dict]) -> Dict:
         """Analyze the OVERALL board context to understand the vibe"""
         all_text = ' '.join([
-            f"{pin['pin']['title']} {pin['pin']['description']}" 
+            f"{pin['pin']['title']} {pin['pin'].get('caption', '')} {pin['pin']['description']}" 
             for pin in analyzed_pins
         ]).lower()
         
@@ -178,7 +225,7 @@ class PinterestPropertyAnalyzer:
         for i, pin in enumerate(pins):
             print(f"Analyzing pin {i+1}/{len(pins)}: {pin['title'][:50]}...")
             
-            text_features = self._analyze_text(pin['title'], pin['description'])
+            text_features = self._analyze_text(pin['title'], pin.get('caption', ''), pin.get('description', ''))
             # For now, skip image analysis (not working well enough)
             image_features = {}
             combined_features = text_features  # Just use text for now
@@ -190,17 +237,60 @@ class PinterestPropertyAnalyzer:
                 'combined_features': combined_features
             })
         
+        # ENHANCEMENT: Use OpenAI to boost confidence with semantic understanding
+        if self.openai_client and len(analyzed) > 0:
+            analyzed = self._enhance_with_openai(analyzed)
+        
         return analyzed
     
-    def _analyze_text(self, title: str, description: str) -> Dict[str, float]:
-        """Analyze text for property features with better context understanding"""
-        text = f"{title} {description}".lower()
+    def _analyze_text(self, title: str, caption: str, description: str) -> Dict[str, float]:
+        """Analyze text for property features with enhanced semantic understanding"""
+        # Prioritize clean caption text, but also include title and full description for comprehensive analysis
+        text = f"{title} {caption} {description}".lower()
         detected = {}
         
+        # Enhanced keyword matching with weighted scoring
         for feature, keywords in self.feature_keywords.items():
-            match_count = sum(1 for keyword in keywords if keyword in text)
+            match_count = 0
+            matched_keywords = []
+            
+            for keyword in keywords:
+                if keyword in text:
+                    match_count += 1
+                    matched_keywords.append(keyword)
+            
             if match_count > 0:
-                detected[feature] = min(1.0, match_count / len(keywords) * 3)  # Boost score
+                # Better scoring: more matches = higher confidence
+                base_score = match_count / len(keywords)
+                # Boost score significantly for multiple matches
+                # Use power scaling to give stronger signals for multiple matches
+                boosted_score = min(1.0, (base_score ** 0.6) * 8)
+                detected[feature] = boosted_score
+        
+        # THEME DETECTION: Analyze overall aesthetic
+        # Cottagecore/Farmhouse themes
+        cottagecore_indicators = ['cottage', 'farmhouse', 'countryside', 'cozy', 'rustic', 'charm']
+        if sum(1 for word in cottagecore_indicators if word in text) >= 2:
+            detected['Rustic'] = max(detected.get('Rustic', 0), 0.85)
+            detected['House'] = max(detected.get('House', 0), 0.75)
+        
+        # Colonial/Historic themes
+        if any(word in text for word in ['colonial', '16th', '17th', '18th', 'century', 'historic']):
+            detected['Vintage'] = max(detected.get('Vintage', 0), 0.85)
+            detected['House'] = max(detected.get('House', 0), 0.75)
+        
+        # Interior vs Exterior detection
+        interior_words = ['interior', 'living room', 'bedroom', 'kitchen', 'bathroom', 'room']
+        exterior_words = ['exterior', 'facade', 'garden', 'yard', 'outdoor']
+        
+        has_interior = any(word in text for word in interior_words)
+        has_exterior = any(word in text for word in exterior_words)
+        
+        # If mostly interior focus, slightly boost style features
+        if has_interior and not has_exterior:
+            for feature in ['Rustic', 'Vintage', 'Modern', 'Dark', 'Natural']:
+                if feature in detected:
+                    detected[feature] = min(1.0, detected[feature] * 1.2)
         
         # SPECIAL RULE: If "balcony" appears, strongly favor Apartment over House
         if 'balcony' in text or 'balkon' in text:
@@ -213,7 +303,81 @@ class PinterestPropertyAnalyzer:
         if any(word in text for word in ['apartment', 'flat', 'loft', 'studio', 'condo']):
             detected['Apartment'] = max(detected.get('Apartment', 0), 0.9)
         
+        # SPECIAL RULE: Strong house indicators
+        house_strong_indicators = ['farmhouse', 'cottage', 'cabin', 'villa', 'colonial']
+        if any(word in text for word in house_strong_indicators):
+            detected['House'] = max(detected.get('House', 0), 0.85)
+        
         return detected
+    
+    def _enhance_with_openai(self, analyzed_pins: List[Dict]) -> List[Dict]:
+        """Use OpenAI to enhance feature detection with semantic understanding"""
+        print("\n🤖 Enhancing analysis with OpenAI...")
+        
+        try:
+            # Compile board summary
+            board_summary = "\n".join([
+                f"Pin {i+1}: {pin['pin']['title'][:100]}" + 
+                (f" - {pin['pin'].get('caption', '')[:150]}" if pin['pin'].get('caption') else "")
+                for i, pin in enumerate(analyzed_pins[:10])  # Use first 10 pins for efficiency
+            ])
+            
+            prompt = f"""Analyze this Pinterest board and rate the confidence (0-100%) for each feature category.
+
+Board pins:
+{board_summary}
+
+Feature categories:
+- Apartment: Urban apartment living
+- House: Detached houses, cottages, farmhouses
+- Balcony: Small outdoor spaces, balconies, terraces
+- Garden: Large outdoor spaces, gardens, yards
+- Modern: Contemporary, minimalist, sleek design
+- Rustic: Farmhouse, cottage, cozy, natural materials
+- Vintage: Antique, historic, traditional, classic
+- Dark: Dark, moody, dramatic aesthetics
+- Natural: Organic, botanical, natural materials
+
+Provide confidence ratings as JSON:
+{{
+  "Apartment": 0-100,
+  "House": 0-100,
+  ...
+}}
+
+Only include features with confidence > 10%."""
+            
+            response = self.openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are an expert at analyzing aesthetic preferences from Pinterest boards. Provide confidence ratings based on the overall theme and style."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                response_format={"type": "json_object"}
+            )
+            
+            openai_scores = json.loads(response.choices[0].message.content)
+            print(f"✅ OpenAI scores: {openai_scores}")
+            
+            # Boost existing features based on OpenAI confidence
+            for pin_data in analyzed_pins:
+                for feature, openai_score in openai_scores.items():
+                    if feature in pin_data['combined_features']:
+                        # Blend keyword score with OpenAI semantic understanding
+                        current_score = pin_data['combined_features'][feature]
+                        openai_normalized = openai_score / 100.0
+                        # Weighted average: 60% keyword, 40% OpenAI
+                        blended_score = (current_score * 0.6) + (openai_normalized * 0.4)
+                        pin_data['combined_features'][feature] = min(1.0, blended_score * 1.3)
+                    elif openai_score > 30:  # Add features OpenAI detected strongly
+                        pin_data['combined_features'][feature] = (openai_score / 100.0) * 0.7
+            
+        except Exception as e:
+            print(f"⚠️ OpenAI enhancement failed: {e}")
+            # Continue without enhancement
+        
+        return analyzed_pins
     
 # pinterest_analyzer.py - Update _calculate_feature_scores
 
@@ -231,7 +395,11 @@ class PinterestPropertyAnalyzer:
         for feature, scores in aggregate_scores.items():
             avg_score = sum(scores) / len(scores)
             frequency = len(scores) / total_pins
-            confidence = min(1.0, avg_score * frequency * 1.5)
+            
+            # IMPROVED: More generous confidence calculation
+            # Use power scaling to boost confidence while keeping it bounded
+            base_confidence = (avg_score ** 0.7) * (frequency ** 0.5) * 2.2
+            confidence = min(1.0, base_confidence)
             
             # CONTEXT-BASED ADJUSTMENTS
             if board_context['living_type'] == 'apartment':
@@ -269,7 +437,7 @@ class PinterestPropertyAnalyzer:
     
 # pinterest_analyzer.py - Update _build_thinkimmo_payload method
 
-    def _build_thinkimmo_payload(self, feature_scores: Dict, location: Dict) -> Dict:
+    def _build_thinkimmo_payload(self, feature_scores: Dict, location: Dict, board_context: Dict) -> Dict:
 
         """Build request payload for ThinkImmo API"""
         sorted_features = sorted(
@@ -282,20 +450,15 @@ class PinterestPropertyAnalyzer:
         for feature, scores in sorted_features:
             print(f"  {feature}: {scores['confidence']:.3f}")
         
-        # LOWERED THRESHOLD: Use top features even if confidence is low
-        # Take ANY feature with confidence > 0.10 OR top 3 features
-        confident_features = [
-            (feature, scores) for feature, scores in sorted_features 
-            if scores['confidence'] > 0.10  # Lowered from 0.25
-        ]
+        # USE TOP 3 FEATURES ONLY for focused matching
+        # This ensures we prioritize the strongest signals from the board
+        confident_features = sorted_features[:3]
         
-        # If still nothing, take top 3 regardless
-        if not confident_features:
-            confident_features = sorted_features[:3]
-        
-        print(f"\n✅ Using {len(confident_features)} features:")
+        print(f"\n✅ Using top 3 features:")
         for feature, scores in confident_features:
             print(f"  {feature}: {scores['confidence']:.3f}")
+        
+
         
         # Determine property type
         property_types = [(f, s) for f, s in confident_features if f in ['Apartment', 'House']]
@@ -350,18 +513,27 @@ class PinterestPropertyAnalyzer:
             'house_preference': house_preference
         }
         
-        # Include ALL style preferences with confidence > 0.10
+        # Include ALL style preferences with confidence > 0.05 (very permissive)
+        style_features = ['Modern', 'Rustic', 'Vintage', 'Dark', 'Natural']
         style_prefs = [
             {'feature': f, **s} for f, s in confident_features 
-            if f in ['Modern', 'Rustic', 'Vintage'] and s['confidence'] > 0.10  # Lowered from 0.25
+            if f in style_features and s['confidence'] > 0.05
         ]
+        
+        # If no style detected, add top style feature anyway
+        if not style_prefs:
+            style_candidates = [(f, s) for f, s in sorted_features if f in style_features]
+            if style_candidates:
+                top_style = style_candidates[0]
+                style_prefs = [{'feature': top_style[0], **top_style[1]}]
         
         print(f"\n🎨 Style preferences: {[p['feature'] for p in style_prefs]}")
         print(f"🌳 Features wanted: garden={detected_features['garden']}, balcony={detected_features['balcony']}")
         
         payload['_metadata'] = {
             'detected_features': detected_features,
-            'style_preferences': style_prefs
+            'style_preferences': style_prefs,
+            'board_context': board_context
         }
         
         return payload   
@@ -371,6 +543,7 @@ class PinterestPropertyAnalyzer:
         metadata = payload.pop('_metadata', {})
         detected_features = metadata.get('detected_features', {})
         style_prefs = metadata.get('style_preferences', [])
+        board_context = metadata.get('board_context', {})
         
         try:
             print(f"\n🔎 Querying ThinkImmo API...")
@@ -386,7 +559,7 @@ class PinterestPropertyAnalyzer:
             data = response.json()
             
             properties = data.get('results', [])
-            filtered_properties = self._filter_properties(properties, detected_features, style_prefs)
+            filtered_properties = self._filter_properties(properties, detected_features, style_prefs, board_context)
             
             return filtered_properties
             
@@ -396,11 +569,65 @@ class PinterestPropertyAnalyzer:
     
     def _filter_properties(self, properties: List[Dict], 
                           detected_features: Dict[str, bool],
-                          style_prefs: List[Dict]) -> List[Dict]:
-        """Post-filter and score properties"""
+                          style_prefs: List[Dict],
+                          board_context: Dict) -> List[Dict]:
+        """Post-filter and score properties with board context awareness"""
+        
+        # Define German keywords that indicate style matches in titles
+        required_keywords = {
+            'rustic': ['charmant', 'gemütlich', 'charme', 'character', 'doppelhaushälfte', 
+                      'reihenhaus', 'familientraum', 'traditionell', 'klassisch', 'landhaus'],
+            'vintage': ['altbau', 'historisch', 'klassisch', 'charm', 'charme', 'denkmalschutz',
+                       'jahrhundertwende', 'jugendstil', 'klassiker', 'tradition', 'villa'],
+            'modern': ['modern', 'neu', 'neubau', 'zeitgemäß', 'contemporary', 'exklusiv', 
+                      'stylisch', 'hochwertig', 'elegant', 'urban', 'penthouse', 'loft'],
+            'dark': ['edel', 'elegant', 'exklusiv', 'luxus', 'sophisticated'],
+            'natural': ['grün', 'garten', 'natur', 'ökologisch', 'nachhaltig', 'begrünt'],
+            'balcony': ['balkon', 'terrasse', 'loggia', 'dachterrasse', 'südbalkon', 
+                       'westbalkon', 'ostbalkon', 'balkon/terrasse'],
+            'garden': ['garten', 'gartenanteil', 'eigengarten', 'grundstück', 'grünfläche',
+                      'außenbereich', 'gartennutzung'],
+            'house': ['haus', 'einfamilienhaus', 'doppelhaushälfte', 'reihenhaus', 'villa',
+                     'einfamilien', 'zweifamilienhaus'],
+            'apartment': ['wohnung', 'apartment', 'eigentumswohnung', 'maisonette', 'penthouse']
+        }
+        
+        # Get all detected features for filtering (styles + property types)
+        all_detected_features = style_prefs.copy()
+        
+        # Add property type and outdoor space features from detected_features
+        if detected_features.get('house_preference'):
+            all_detected_features.append({'feature': 'House', 'confidence': 0.5})
+        if detected_features.get('garden'):
+            all_detected_features.append({'feature': 'Garden', 'confidence': 0.5})
+        if detected_features.get('balcony'):
+            all_detected_features.append({'feature': 'Balcony', 'confidence': 0.5})
+        
+        # Get features that have keyword lists
+        dominant_styles = [p['feature'].lower() for p in all_detected_features if p['feature'].lower() in required_keywords]
+        
+        print(f"\n🔍 Filtering properties by German keywords for styles: {dominant_styles}")
+        
         scored_properties = []
         
         for prop in properties:
+            title = (prop.get('title') or '').lower()
+            description = (prop.get('description') or '').lower()
+            
+            # PRE-FILTER: Check if title contains relevant keywords for detected styles
+            if dominant_styles:
+                has_keyword_match = False
+                for style in dominant_styles:
+                    if style in required_keywords:
+                        keywords = required_keywords[style]
+                        if any(kw in title for kw in keywords):
+                            has_keyword_match = True
+                            break
+                
+                # Skip properties that don't match style keywords in title
+                if not has_keyword_match:
+                    continue
+            
             match_score = 0
             reasons = []
             
@@ -429,13 +656,30 @@ class PinterestPropertyAnalyzer:
                     match_score += 3
                     reasons.append(f'Plot: {plot_area}m²')
             
-            # Style matching
-            title = (prop.get('title') or '').lower()
+            # Style matching - expanded German keywords
+            full_text = f"{title} {description}"
             
             style_keywords = {
-                'rustic': ['charmant', 'gemütlich', 'traditionell', 'familientraum', 'klassisch'],
-                'modern': ['modern', 'neu', 'neubau', 'exklusiv', 'stilvoll', 'urban'],
-                'vintage': ['altbau', 'klassisch', 'historisch', 'charm']
+                'rustic': [
+                    'charmant', 'gemütlich', 'traditionell', 'familientraum', 'klassisch',
+                    'landhaus', 'bauernhaus', 'rustikal', 'holz', 'natürlich', 'warm',
+                    'behaglic', 'urig', 'charme', 'character', 'doppelhaushälfte'
+                ],
+                'modern': [
+                    'modern', 'neu', 'neubau', 'exklusiv', 'stilvoll', 'urban',
+                    'zeitgemäß', 'contemporary', 'minimalistisch', 'elegant', 'hochwertig'
+                ],
+                'vintage': [
+                    'altbau', 'klassisch', 'historisch', 'charm', 'klassiker',
+                    'tradition', 'denkmalschutz', 'jahrhundertwende', 'jugendstil', 'antik'
+                ],
+                'dark': [
+                    'dunkel', 'edel', 'elegant', 'exklusiv', 'luxus', 'sophisticated'
+                ],
+                'natural': [
+                    'grün', 'garten', 'natur', 'ökologisch', 'nachhaltig', 'natürlich',
+                    'holz', 'bio', 'umwelt', 'öko'
+                ]
             }
             
             for pref in style_prefs:
@@ -444,19 +688,80 @@ class PinterestPropertyAnalyzer:
                 
                 if feature in style_keywords:
                     keywords = style_keywords[feature]
-                    matches = [kw for kw in keywords if kw in title]
+                    matches = [kw for kw in keywords if kw in full_text]
                     if matches:
-                        score_boost = confidence * len(matches) * 2
+                        # Higher boost for style matches
+                        score_boost = confidence * len(matches) * 3
                         match_score += score_boost
-                        reasons.append(f'{feature.title()}: {", ".join(matches)}')
+                        reasons.append(f'{feature.title()}: {", ".join(matches[:3])}')
             
-            # Construction year bonus for rustic
-            construction_year = prop.get('constructionYear', 2020)
-            if construction_year and construction_year < 2000:
-                if any(p['feature'].lower() == 'rustic' for p in style_prefs):
-                    age_bonus = min(2, (2000 - construction_year) / 50)
-                    match_score += age_bonus
-                    reasons.append(f'Built {construction_year}')
+            # Strict year filtering for vintage/rustic styles
+            construction_year = prop.get('constructionYear', None)
+            has_vintage_rustic = any(p['feature'].lower() in ['rustic', 'vintage'] for p in style_prefs)
+            
+            if construction_year:
+                # For vintage/rustic boards, strongly prefer pre-1920s properties
+                if has_vintage_rustic:
+                    if construction_year <= 1920:
+                        # Excellent match for truly old properties
+                        age_bonus = 5.0
+                        match_score += age_bonus
+                        reasons.append(f'Historic property ({construction_year})')
+                    elif construction_year <= 1950:
+                        # Good match for mid-century
+                        age_bonus = 2.0
+                        match_score += age_bonus
+                        reasons.append(f'Built {construction_year}')
+                    elif construction_year > 1990:
+                        # Penalize modern properties for vintage/rustic boards
+                        match_score *= 0.5
+                else:
+                    # For non-vintage boards, slight bonus for character
+                    if construction_year < 1980:
+                        age_bonus = 1.0
+                        match_score += age_bonus
+                        reasons.append(f'Built {construction_year}')
+            
+            # Use board context for property type filtering
+            living_type = board_context.get('living_type', 'mixed')
+            property_type = prop.get('realEstateType', '').lower()
+            
+            # Boost or penalize based on living type interpretation
+            if living_type == 'house':
+                if 'house' in property_type or 'villa' in property_type or 'einfamilienhaus' in property_type:
+                    match_score *= 1.5
+                    reasons.append('Property type matches board preference')
+                elif 'apartment' in property_type or 'wohnung' in property_type:
+                    match_score *= 0.3  # Strong penalty for apartments on house boards
+            elif living_type == 'apartment':
+                if 'apartment' in property_type or 'wohnung' in property_type:
+                    match_score *= 1.5
+                    reasons.append('Property type matches board preference')
+                elif 'house' in property_type:
+                    match_score *= 0.3  # Strong penalty for houses on apartment boards
+            
+            # Use garden/outdoor space from board context
+            primary_focus = board_context.get('primary_focus', '')
+            if primary_focus == 'garden' and prop.get('garden', False):
+                match_score += 3.0
+                reasons.append('Has garden (board preference)')
+            elif primary_focus == 'balcony' and prop.get('balcony', False):
+                match_score += 3.0
+                reasons.append('Has balcony (board preference)')
+            
+            # Extract image URL from images array
+            images = prop.get('images', [])
+            if images and len(images) > 0:
+                prop['image'] = images[0].get('originalUrl', '')
+            else:
+                prop['image'] = ''
+            
+            # Extract the actual platform URL from the response (this is the correct link to the listing)
+            platforms = prop.get('platforms', [])
+            if platforms and len(platforms) > 0:
+                prop['link'] = platforms[0].get('url', '')
+            else:
+                prop['link'] = ''
             
             prop['match_score'] = round(match_score, 2)
             prop['match_reasons'] = reasons

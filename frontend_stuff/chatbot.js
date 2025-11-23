@@ -53,19 +53,19 @@ function createChatbotUI() {
   const chatbotHTML = `
     <!-- Chatbot Toggle Button -->
     <button id="chatbotToggle" class="chatbot-toggle" title="Chat with AI Advisor">
-      💬
+      <i class="fas fa-comments"></i>
     </button>
     
     <!-- Chatbot Window -->
     <div id="chatbotWindow" class="chatbot-window">
       <div class="chatbot-header">
         <div>
-          <h3>🏡 Home Advisor</h3>
+          <h3><i class="fas fa-home"></i> Home Advisor</h3>
           <p>AI-powered guidance</p>
         </div>
         <div class="chatbot-header-actions">
-          <button id="chatbotClear" class="chatbot-icon-btn" title="Clear conversation">🗑️</button>
-          <button id="chatbotClose" class="chatbot-close">✕</button>
+          <button id="chatbotClear" class="chatbot-icon-btn" title="Clear conversation"><i class="fas fa-trash"></i></button>
+          <button id="chatbotClose" class="chatbot-close"><i class="fas fa-times"></i></button>
         </div>
       </div>
       
@@ -359,7 +359,7 @@ function addErrorMessage(errorText, originalMessage) {
   bubble.className = 'message-bubble';
   bubble.innerHTML = `
     <p>${errorText}</p>
-    <button class="retry-btn" onclick="retryMessage('${originalMessage.replace(/'/g, "\\'")}')">🔄 Retry</button>
+    <button class="retry-btn" onclick="retryMessage('${originalMessage.replace(/'/g, "\\'")}')"><i class="fas fa-redo"></i> Retry</button>
   `;
   
   errorDiv.appendChild(bubble);

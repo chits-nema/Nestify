@@ -104,7 +104,7 @@ function displayBoardContext(context) {
   const html = `
     <div class="context-card">
       <div class="context-header">
-        <span class="context-icon">🎯</span>
+        <span class="context-icon"><i class="fas fa-bullseye"></i></span>
         <h4>Board Analysis</h4>
       </div>
       <div class="context-grid">
@@ -131,31 +131,32 @@ function displayBoardContext(context) {
 function displayFeatureScores(scores) {
   const container = document.getElementById('featuresGrid');
   
-  // Sort features by score
+  // Sort features by confidence score and take top 3
   const sortedFeatures = Object.entries(scores)
-    .sort(([, a], [, b]) => b - a)
-    .filter(([, score]) => score > 0);
+    .sort(([, a], [, b]) => b.confidence - a.confidence)
+    .filter(([, scoreObj]) => scoreObj.confidence > 0)
+    .slice(0, 3); // Limit to top 3
   
   if (sortedFeatures.length === 0) {
     container.innerHTML = '<p class="no-data">No distinct features detected</p>';
     return;
   }
   
-  const html = sortedFeatures.map(([feature, score]) => {
-    const percentage = Math.round(score * 100);
-    const icon = getFeatureIcon(feature);
+  const html = sortedFeatures.map(([feature, scoreObj]) => {
+    const percentage = Math.round(scoreObj.confidence * 100);
+    const iconClass = getFeatureIcon(feature);
     const color = getFeatureColor(feature);
     
     return `
       <div class="feature-card">
         <div class="feature-header">
-          <span class="feature-icon">${icon}</span>
+          <span class="feature-icon"><i class="fas ${iconClass}"></i></span>
           <span class="feature-name">${feature}</span>
         </div>
         <div class="feature-bar">
           <div class="feature-fill" style="width: ${percentage}%; background: ${color};"></div>
         </div>
-        <div class="feature-score">${percentage}%</div>
+        <div class="feature-score">${percentage}% confidence</div>
       </div>
     `;
   }).join('');
@@ -166,33 +167,37 @@ function displayFeatureScores(scores) {
 // Get icon for feature
 function getFeatureIcon(feature) {
   const icons = {
-    'Apartment': '🏢',
-    'House': '🏠',
-    'Balcony': '🌿',
-    'Garden': '🌳',
-    'Modern': '✨',
-    'Rustic': '🪵',
-    'Vintage': '🕰️',
-    'Minimalist': '⬜',
-    'Cozy': '🛋️'
+    'Apartment': 'fa-building',
+    'House': 'fa-home',
+    'Balcony': 'fa-leaf',
+    'Garden': 'fa-tree',
+    'Modern': 'fa-sparkles',
+    'Rustic': 'fa-mountain',
+    'Vintage': 'fa-clock',
+    'Dark': 'fa-moon',
+    'Natural': 'fa-seedling',
+    'Minimalist': 'fa-square',
+    'Cozy': 'fa-couch'
   };
-  return icons[feature] || '🏡';
+  return icons[feature] || 'fa-home';
 }
 
 // Get color for feature
 function getFeatureColor(feature) {
   const colors = {
-    'Apartment': '#3498db',
-    'House': '#e74c3c',
-    'Balcony': '#2ecc71',
-    'Garden': '#27ae60',
-    'Modern': '#9b59b6',
-    'Rustic': '#d35400',
-    'Vintage': '#f39c12',
-    'Minimalist': '#95a5a6',
-    'Cozy': '#e67e22'
+    'Apartment': '#2E7D99',
+    'House': '#4CAF50',
+    'Balcony': '#81C784',
+    'Garden': '#66BB6A',
+    'Modern': '#42A5F5',
+    'Rustic': '#81C784',
+    'Vintage': '#7986CB',
+    'Dark': '#546E7A',
+    'Natural': '#66BB6A',
+    'Minimalist': '#90CAF9',
+    'Cozy': '#4CAF50'
   };
-  return colors[feature] || '#34495e';
+  return colors[feature] || '#2E7D99';
 }
 
 // Display matched properties
@@ -206,24 +211,14 @@ function displayProperties(properties) {
     return;
   }
   
-  // Filter to only show properties with images
-  const propertiesWithImages = properties.filter(prop => {
-    const hasImage = prop.titlePicture || prop.image;
-    return hasImage && hasImage.trim() !== '';
-  });
+  console.log('Displaying properties:', properties.length);
+  console.log('First property sample:', properties[0]);
   
-  // If no properties with images, show message
-  if (propertiesWithImages.length === 0) {
-    container.innerHTML = '<p class="no-data">No properties with images found. Try a different board or city.</p>';
-    countEl.textContent = 'No matches with images';
-    return;
-  }
-  
+  // Show all properties (don't filter by images)
   const totalFound = properties.length;
-  const withImages = propertiesWithImages.length;
-  countEl.textContent = `Found ${withImages} properties with images (${totalFound} total matches)`;
+  countEl.textContent = `Found ${totalFound} matching properties`;
   
-  const html = propertiesWithImages.map(prop => {
+  const html = properties.map(prop => {
     const matchScore = prop.match_score || 0;
     const matchReasons = prop.match_reasons || [];
     const price = prop.buyingPrice || prop.price || 0;
@@ -249,18 +244,22 @@ function displayProperties(properties) {
       matchClass = 'fair';
     }
     
+    const propertyUrl = prop.link || prop.exposeUrl || '#';
+    const hasValidUrl = propertyUrl !== '#' && propertyUrl !== '';
+    
     return `
-      <div class="property-card">
-        <div class="property-image">
-          <img src="${image}" alt="${title}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23ecf0f1%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%237f8c8d%22 font-family=%22Arial%22 font-size=%2220%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Image%3C/text%3E%3C/svg%3E'">
-          <div class="match-badge ${matchClass}">
-            <span class="match-score">${matchScore.toFixed(1)}</span>
-            <span class="match-label">${matchLevel}</span>
+      <a href="${propertyUrl}" target="_blank" rel="noopener noreferrer" class="property-card-link" ${!hasValidUrl ? 'style="pointer-events: none; cursor: default;"' : ''}>
+        <div class="property-card">
+          <div class="property-image">
+            <img src="${image}" alt="${title}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23ecf0f1%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%237f8c8d%22 font-family=%22Arial%22 font-size=%2220%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Image%3C/text%3E%3C/svg%3E'">
+            <div class="match-badge ${matchClass}">
+              <span class="match-score">${matchScore.toFixed(1)}</span>
+              <span class="match-label">${matchLevel}</span>
+            </div>
           </div>
-        </div>
-        <div class="property-content">
+          <div class="property-content">
           <h4 class="property-title">${title}</h4>
-          <p class="property-location">📍 ${city}</p>
+          <p class="property-location"><i class="fas fa-map-marker-alt"></i> ${city}</p>
           
           <div class="property-stats">
             <div class="stat">
@@ -286,13 +285,12 @@ function displayProperties(properties) {
             </div>
           ` : ''}
           
-          ${prop.exposeUrl ? `
-            <a href="${prop.exposeUrl}" target="_blank" class="btn secondary btn-small">
-              View Details →
-            </a>
-          ` : ''}
+          <div class="view-details-hint">
+            <i class="fas fa-external-link-alt"></i> Click to view details
+          </div>
         </div>
       </div>
+      </a>
     `;
   }).join('');
   
