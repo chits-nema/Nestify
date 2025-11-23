@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .heat_map.router import router as heatmap_router
 from .pinterest.router import router as pinterest_router
+from .chatbot.router import router as chatbot_router
 
 app = FastAPI(title="Nestify Backend")
 
@@ -19,26 +23,18 @@ app.add_middleware(
 
 app.include_router(heatmap_router)
 app.include_router(pinterest_router)
+app.include_router(chatbot_router)
 
 
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "nestify-backend"}
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+
+
+# ---------- ThinkImmo Property Search ----------
 from pydantic import BaseModel
 from typing import Literal
 import httpx
-
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # OK for hackathon demo
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 THINKIMMO_URL = "https://thinkimmo-api.mgraetz.de/thinkimmo"
 
@@ -69,6 +65,7 @@ class PropertySearchRequest(BaseModel):
         "GARAGEBUY",
         "OFFICEBUY",
     ] = "APARTMENTBUY"
+    maxPrice: int | None = None  # Optional budget filter
 
 
 # ---------- main search endpoint ----------
@@ -93,26 +90,16 @@ async def search_properties(req: PropertySearchRequest):
         "sortKey": "pricePerSqm",
         "from": req.from_index,
         "size": req.size,
-        "geoSearches": {
-            "geoSearchQuery": norm_city,
-            "geoSearchType": "town",
-            "region": norm_region,
-        },
+        # "geoSearches": {
+        #     "geoSearchQuery": norm_city,
+        #     "geoSearchType": "town",
+        #     "region": norm_region,
+        # }
     }
     
-    payload = {
-    "active": True,
-    "type": req.propertyType,
-    "sortBy": "desc",
-    "sortKey": "pricePerSqm",
-    "from": req.from_index,
-    "size": req.size,
-    # "geoSearches": {
-    #     "geoSearchQuery": norm_city,
-    #     "geoSearchType": "town",
-    #     "region": norm_region,
-    # }
-    }
+    # Add price filter if budget is provided
+    if req.maxPrice:
+        payload["priceRange"] = {"max": req.maxPrice}
 
 
     print("\n>>> PAYLOAD SENT TO THINKIMMO")
